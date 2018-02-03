@@ -15,6 +15,8 @@ using System.Windows.Shapes;
 using Microsoft.Kinect;
 using Emgu.CV;
 using Emgu.CV.Util;
+using Emgu.CV.VideoSurveillance;
+using Emgu.CV.CvEnum;
 using System.IO;
 using Emgu.CV.Structure;
 using System.Drawing;
@@ -35,11 +37,16 @@ namespace GestureControlledRemote
         private DepthImagePixel[] depthPixels;
         private byte[] depthcolorPixels;
 
+        /// <summary>
+        ///  Hand Detection Variables
+        /// </summary>
+        int backgroundFrame = 500;
+
         public MainWindow()
         {
             InitializeComponent();
         }
-        
+
         private void InitKinect()
         {
             /// Search for connected sensors
@@ -71,7 +78,7 @@ namespace GestureControlledRemote
 
         /// Capture and show Emgu image
         private void captureImage(object sender, RoutedEventArgs e)
-        {   
+        {
             Emgu.CV.UI.ImageViewer.Show(convertToEmgu());
         }
 
@@ -79,6 +86,78 @@ namespace GestureControlledRemote
         private void EmguDepthFrameReady(object sender, DepthImageFrameReadyEventArgs e)
         {
             this.emguImage.Source = BitmapSourceConvert.ToBitmapSource(convertToEmgu());
+        }
+
+        /// Called each time a Depth Frame is ready. Passes Hand data to DTW Processor
+        private void EmguHandExtractDepthFrameReady(object sender, DepthImageFrameReadyEventArgs e)
+        {
+            CvInvoke.NamedWindow("Frame");
+            CvInvoke.NamedWindow("Background");
+
+            // Get hand position and then process hand data.
+            Image<Gray, Byte> eimage = convertToEmgu();
+            Mat frame = CvInvoke.CvArrToMat(eimage);
+            Mat back = new Mat();
+            Mat fore = new Mat();
+            
+            List<Tuple<PointF,double>> palm_centers = new List<Tuple<PointF, double>>();
+            BackgroundSubtractorMOG2 bg = new BackgroundSubtractorMOG2();
+
+            //Update the current background model and get the foreground
+            if (backgroundFrame>0)
+            {
+                bg.Apply(frame, fore, backgroundFrame--);
+            }
+            else
+            {
+                bg.Apply(frame, fore, 0);
+            }
+
+            //Find the contours in the foreground
+            VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint();
+            Mat h = new Mat();
+            CvInvoke.FindContours(fore, contours, h, RetrType.External, ChainApproxMethod.ChainApproxNone);
+            for (int i=0;i<contours.Size;i++)
+            {
+                //Ignore all small insignificant areas
+                if (CvInvoke.ContourArea(contours[i])>=5000)
+                {
+                    //Draw contour
+                    VectorOfVectorOfPoint tcontours = new VectorOfVectorOfPoint();
+                    tcontours.Push(contours[i]);
+                    CvInvoke.DrawContours(frame, tcontours, -1, new MCvScalar(0, 0, 255), 2);
+
+                    //Detect Hull in current contour
+                    VectorOfVectorOfPoint hulls = new VectorOfVectorOfPoint();
+                    VectorOfVectorOfInt hullsI = new VectorOfVectorOfInt();
+                    CvInvoke.ConvexHull(tcontours[0], hulls[0], false);
+                    CvInvoke.ConvexHull(tcontours[0], hullsI[0], false);
+                    CvInvoke.DrawContours(frame, hulls, -1, new MCvScalar(0, 255, 0), 2);
+
+                    //Find Convex Defects
+                    VectorOfVectorOfInt defects = new VectorOfVectorOfInt();
+                    if (hullsI[0].Size>0)
+                    {
+                        System.Windows.Point rough_palm_center = new System.Windows.Point();
+                        CvInvoke.ConvexityDefects(tcontours[0], hullsI[0], defects);
+                        if (defects.Size>=3)
+                        {
+                            VectorOfPoint palm_points = new VectorOfPoint();
+                            for (int j = 0; j < defects.Size; j++)
+                            {
+                                int startidx = defects[j][0]; System.Windows.Point ptStart = new System.Windows.Point(tcontours[0][startidx] );
+                                int endidx = defects[j][1]; System.Windows.Point ptEnd = new System.Windows.Point(tcontours[0][endidx] );
+                                int faridx = defects[j][2]; System.Windows.Point ptFar(tcontours[0][faridx] );
+                                //Sum up all the hull and defect points to compute average
+                                rough_palm_center += ptFar + ptStart + ptEnd;
+                                palm_points.push_back(ptFar);
+                                palm_points.push_back(ptStart);
+                                palm_points.push_back(ptEnd);
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         /// Convert to Emgu
