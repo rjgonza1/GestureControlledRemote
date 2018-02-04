@@ -6,6 +6,7 @@
     <Grid Name="grid1">
         <Image x:Name="depthImage" Margin="10,325,10,10" />
         <Button x:Name="capture" Content="Capture" HorizontalAlignment="Left" Height="27" Margin="10,10,0,0" VerticalAlignment="Top" Width="106"/>
+        <TextBox FontSize="14" Name="Coords" Margin="0,0,0,0" Focusable="False" BorderThickness="0" Text="" TextAlignment="Right" HorizontalAlignment="Right" VerticalAlignment="Top" Width="400" Height="20" />
         <Image x:Name="emguImage" Margin="10,42,10,323" />
     </Grid>
 </Window>

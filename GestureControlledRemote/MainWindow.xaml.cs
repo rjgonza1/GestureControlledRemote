@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -36,11 +37,21 @@ namespace GestureControlledRemote
         private WriteableBitmap depthBitmap;
         private DepthImagePixel[] depthPixels;
         private byte[] depthcolorPixels;
+        private Image<Gray, Byte> handImage;
+        private double threshDepth = 1000;
 
+        /// DTW
+        private DtwGestureRecognizer _dtw;
+
+        /// Video
+        private ArrayList _video;
+        private const int MinimumFrames = 6;
+        private bool _capturing;
+        private const int BufferSize = 32;
         /// <summary>
-        ///  Hand Detection Variables
+        /// Switch used to ignore certain skeleton frames
         /// </summary>
-        int backgroundFrame = 500;
+        private int _flipFlop;
 
         public MainWindow()
         {
@@ -73,6 +84,10 @@ namespace GestureControlledRemote
 
                 /// Skeleton Stream
                 //this.sensor.SkeletonStream.Enable();
+
+                /// Init DTW
+                _dtw = new DtwGestureRecognizer(2, 0.6, 2, 2, 10);
+                _video = new ArrayList();
             }
         }
 
@@ -86,78 +101,6 @@ namespace GestureControlledRemote
         private void EmguDepthFrameReady(object sender, DepthImageFrameReadyEventArgs e)
         {
             this.emguImage.Source = BitmapSourceConvert.ToBitmapSource(convertToEmgu());
-        }
-
-        /// Called each time a Depth Frame is ready. Passes Hand data to DTW Processor
-        private void EmguHandExtractDepthFrameReady(object sender, DepthImageFrameReadyEventArgs e)
-        {
-            CvInvoke.NamedWindow("Frame");
-            CvInvoke.NamedWindow("Background");
-
-            // Get hand position and then process hand data.
-            Image<Gray, Byte> eimage = convertToEmgu();
-            Mat frame = CvInvoke.CvArrToMat(eimage);
-            Mat back = new Mat();
-            Mat fore = new Mat();
-            
-            List<Tuple<PointF,double>> palm_centers = new List<Tuple<PointF, double>>();
-            BackgroundSubtractorMOG2 bg = new BackgroundSubtractorMOG2();
-
-            //Update the current background model and get the foreground
-            if (backgroundFrame>0)
-            {
-                bg.Apply(frame, fore, backgroundFrame--);
-            }
-            else
-            {
-                bg.Apply(frame, fore, 0);
-            }
-
-            //Find the contours in the foreground
-            VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint();
-            Mat h = new Mat();
-            CvInvoke.FindContours(fore, contours, h, RetrType.External, ChainApproxMethod.ChainApproxNone);
-            for (int i=0;i<contours.Size;i++)
-            {
-                //Ignore all small insignificant areas
-                if (CvInvoke.ContourArea(contours[i])>=5000)
-                {
-                    //Draw contour
-                    VectorOfVectorOfPoint tcontours = new VectorOfVectorOfPoint();
-                    tcontours.Push(contours[i]);
-                    CvInvoke.DrawContours(frame, tcontours, -1, new MCvScalar(0, 0, 255), 2);
-
-                    //Detect Hull in current contour
-                    VectorOfVectorOfPoint hulls = new VectorOfVectorOfPoint();
-                    VectorOfVectorOfInt hullsI = new VectorOfVectorOfInt();
-                    CvInvoke.ConvexHull(tcontours[0], hulls[0], false);
-                    CvInvoke.ConvexHull(tcontours[0], hullsI[0], false);
-                    CvInvoke.DrawContours(frame, hulls, -1, new MCvScalar(0, 255, 0), 2);
-
-                    //Find Convex Defects
-                    VectorOfVectorOfInt defects = new VectorOfVectorOfInt();
-                    if (hullsI[0].Size>0)
-                    {
-                        System.Windows.Point rough_palm_center = new System.Windows.Point();
-                        CvInvoke.ConvexityDefects(tcontours[0], hullsI[0], defects);
-                        if (defects.Size>=3)
-                        {
-                            VectorOfPoint palm_points = new VectorOfPoint();
-                            for (int j = 0; j < defects.Size; j++)
-                            {
-                                int startidx = defects[j][0]; System.Windows.Point ptStart = new System.Windows.Point(tcontours[0][startidx] );
-                                int endidx = defects[j][1]; System.Windows.Point ptEnd = new System.Windows.Point(tcontours[0][endidx] );
-                                int faridx = defects[j][2]; System.Windows.Point ptFar(tcontours[0][faridx] );
-                                //Sum up all the hull and defect points to compute average
-                                rough_palm_center += ptFar + ptStart + ptEnd;
-                                palm_points.push_back(ptFar);
-                                palm_points.push_back(ptStart);
-                                palm_points.push_back(ptEnd);
-                            }
-                        }
-                    }
-                }
-            }
         }
 
         /// Convert to Emgu
@@ -195,10 +138,20 @@ namespace GestureControlledRemote
                     int minDepth = depthFrame.MinDepth;
                     int maxDepth = depthFrame.MaxDepth;
 
+                    // Get the avg of x values and y values of hand position
+                    int sumX = 0;
+                    int sumY = 0;
+                    int totalPixels = 0;
+                    float avgX = 0;
+                    float avgY = 0;
+
                     // Convert the depth to RGB
                     int colorPixelIndex = 0;
                     for (int i = 0; i < this.depthPixels.Length; ++i)
                     {
+                        int x = i % this.sensor.DepthStream.FrameWidth;
+                        int y = (int)(i / this.sensor.DepthStream.FrameWidth);
+
                         // Get the depth for this pixel
                         short depth = depthPixels[i].Depth;
 
@@ -211,28 +164,69 @@ namespace GestureControlledRemote
                         // Consider using a lookup table instead when writing production code.
                         // See the KinectDepthViewer class used by the KinectExplorer sample
                         // for a lookup table example.
-                        byte intensity = (byte)(depth >= minDepth && depth <= maxDepth ? depth : 0);
+                        byte intensity = (byte)(0);
+                        if (depth >= minDepth && depth <= threshDepth)
+                        {
+                            intensity = (byte)(depth);
+                            sumX += x;
+                            sumY += y;
+                            ++totalPixels;
+                        }
+                            // Write out blue byte
+                            this.depthcolorPixels[colorPixelIndex++] = intensity;
 
-                        // Write out blue byte
-                        this.depthcolorPixels[colorPixelIndex++] = intensity;
+                            // Write out green byte
+                            this.depthcolorPixels[colorPixelIndex++] = intensity;
 
-                        // Write out green byte
-                        this.depthcolorPixels[colorPixelIndex++] = intensity;
-
-                        // Write out red byte                        
-                        this.depthcolorPixels[colorPixelIndex++] = intensity;
+                            // Write out red byte                        
+                            this.depthcolorPixels[colorPixelIndex++] = intensity;
 
                         // We're outputting BGR, the last byte in the 32 bits is unused so skip it
                         // If we were outputting BGRA, we would write alpha here.
                         ++colorPixelIndex;
                     }
+                    if (totalPixels > 0)
+                    {
+                        avgX = (float)(sumX / totalPixels);
+                        avgY = (float)(sumY / totalPixels);
+                    }
+
+
+                    /// Pass off to DTW
+
+                    // We need a sensible number of frames before we start attempting to match gestures against remembered sequences
+                    if (_video.Count > MinimumFrames && _capturing == false)
+                    {
+                        ////Debug.WriteLine("Reading and video.Count=" + video.Count);
+                        string s = _dtw.Recognize(_video);
+                        if (!s.Contains("__UNKNOWN"))
+                        {
+                            // There was no match so reset the buffer
+                            _video = new ArrayList();
+                        }
+                    }
+                    
+                    _video.Add(avgX);
+                    _video.Add(avgY);
+
+                    Coords.Text = "(" + avgX + "," + avgY + ")";
+                    
+                    
+
+                    // Update the debug window with Sequences information
+                    //dtwTextOutput.Text = _dtw.RetrieveText();
+
+
 
                     // Write the pixel data into our bitmap
                     this.depthBitmap.WritePixels(
                         new Int32Rect(0, 0, this.depthBitmap.PixelWidth, this.depthBitmap.PixelHeight),
                         this.depthcolorPixels,
                         this.depthBitmap.PixelWidth * sizeof(int),
-                        0);              
+                        0);
+
+                    
+                    
                 }
             }
         }
@@ -283,9 +277,7 @@ namespace GestureControlledRemote
 
                     /// Capture clicks
                     this.capture.Click += captureImage;
-
-
-                }
+            }
                 catch (IOException)
                 {
                     sensor = null;
