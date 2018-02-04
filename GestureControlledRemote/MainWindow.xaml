@@ -2,11 +2,44 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:emgu="clr-namespace:Emgu.CV.UI;assembly=Emgu.CV.UI"
-        Title="PlaybackStream" Height="674" Width="620" Loaded="WindowLoaded" Closed="WindowClosed">
+        Title="PlaybackStream" Height="674" Width="1280" Loaded="WindowLoaded" Closed="WindowClosed">
     <Grid Name="grid1">
-        <Image x:Name="depthImage" Margin="10,325,10,10" />
+        <Image x:Name="depthImage" Margin="497,325,338.6,10" Width="438" HorizontalAlignment="Center" RenderTransformOrigin="0.817,0.524"/>
+        <Image x:Name="emguImage" Margin="0,325,9.6,193" Width="190" HorizontalAlignment="Right"/>
         <Button x:Name="capture" Content="Capture" HorizontalAlignment="Left" Height="27" Margin="10,10,0,0" VerticalAlignment="Top" Width="106"/>
         <TextBox FontSize="14" Name="Coords" Margin="0,0,0,0" Focusable="False" BorderThickness="0" Text="" TextAlignment="Right" HorizontalAlignment="Right" VerticalAlignment="Top" Width="400" Height="20" />
-        <Image x:Name="emguImage" Margin="10,42,10,323" />
+        <StackPanel Grid.Column="0" Grid.Row="1">
+            <Button Name="dtwRead" Content="Read" Click="DtwReadClick" Width="200" IsEnabled="False" />
+            <Button Name="dtwCapture" Content="Capture" Click="DtwCaptureClick" Width="200 "/>
+            <Button Name="dtwStore" Content="Store" IsEnabled="False" Click="DtwStoreClick" Width="200" />
+            <Button Name="dtwLoadFile" Content="Load gesture file" IsEnabled="True" Click="DtwLoadFile" Width="200" />
+            <Button Name="dtwSaveToFile" Content="Save to file" IsEnabled="True" Click="DtwSaveToFile" Width="200" />
+            <Button Name="dtwShowGestureTest" Content="Show Gesture Text" IsEnabled="True" Click="DtwShowGestureText" Width="200" />
+        </StackPanel>
+        <StackPanel HorizontalAlignment="Left" Margin="0,268,0,0">
+            <ComboBox Name="gestureList" Width="400">
+                <ComboBoxItem IsSelected="True">@Right hand swipe left</ComboBoxItem>
+                <ComboBoxItem>@Right hand swipe right</ComboBoxItem>
+                <ComboBoxItem>@Left hand swipe left</ComboBoxItem>
+                <ComboBoxItem>@Left hand swipe right</ComboBoxItem>
+                <ComboBoxItem>@Two hands zoom in</ComboBoxItem>
+                <ComboBoxItem>@Two hands zoom out</ComboBoxItem>
+                <ComboBoxItem>@Right hand wave</ComboBoxItem>
+                <ComboBoxItem>@Left hand wave</ComboBoxItem>
+                <ComboBoxItem>@Right hand pull down</ComboBoxItem>
+                <ComboBoxItem>@Left hand pull down</ComboBoxItem>
+                <ComboBoxItem>@Right hand push up</ComboBoxItem>
+                <ComboBoxItem>@Left hand push up</ComboBoxItem>
+                <ComboBoxItem>@Both hands pull down</ComboBoxItem>
+                <ComboBoxItem>@Both hands push up</ComboBoxItem>
+                <ComboBoxItem>@Get on down at the disco!</ComboBoxItem>
+            </ComboBox>
+            <TextBox FontSize="14" Name="results" Margin="0,0,0,0" Focusable="False" BorderThickness="0" Text="" TextAlignment="Left" HorizontalAlignment="Left" VerticalAlignment="Top" Width="400" Height="20" />
+            <TextBox FontSize="14" Name="status" Margin="0,0,0,0" Focusable="False" BorderThickness="0" Text="" TextAlignment="Left" HorizontalAlignment="Left" VerticalAlignment="Top" Width="400" Height="20" />
+            <TextBox FontSize="14" Name="currentBufferFrame" Margin="0,0,0,0" Focusable="False" BorderThickness="0" Text="" TextAlignment="Left" HorizontalAlignment="Left" VerticalAlignment="Top" Width="400" Height="20" />
+            <TextBox FontSize="14" Name="frameRate" Margin="0,0,0,0" Focusable="False" BorderThickness="0" Text="" TextAlignment="Left" HorizontalAlignment="Left" VerticalAlignment="Top" Width="400" Height="20" />
+        </StackPanel>
+        <TextBox Grid.Column="0" FontSize="11" Name="dtwTextOutput" Margin="0,10,297.6,492" Focusable="True" BorderThickness="0" Text="" TextAlignment="Left" HorizontalAlignment="Right" VerticalAlignment="Center" Width="200" Height="142" VerticalScrollBarVisibility="Auto" IsReadOnly="True" />
     </Grid>
+
 </Window>

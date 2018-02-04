@@ -325,5 +325,16 @@ namespace GestureControlledRemote
 
             return Math.Sqrt(d);
         }
+
+        private double Dist2(float[] a, float[] b)
+        {
+            double d = 0;
+            for (int i = 0; i < _dimension; i++)
+            {
+                d += Math.Pow((double)a[i] - (double)b[i], 2);
+            }
+
+            return Math.Sqrt(d);
+        }
     }
 }
