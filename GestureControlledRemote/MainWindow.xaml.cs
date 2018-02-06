@@ -192,13 +192,14 @@ namespace GestureControlledRemote
             Emgu.CV.UI.ImageViewer.Show(convertToEmgu());
         }
 
-        
+        /*
         // /Display emgu depth stream
         private void EmguDepthFrameReady(object sender, DepthImageFrameReadyEventArgs e)
         {
             //this.emguImage.Source = BitmapSourceConvert.ToBitmapSource(convertToEmgu());
             ContourAndHull(convertToEmgu());
         }
+        */
         
 
         /// Convert to Emgu
@@ -225,6 +226,7 @@ namespace GestureControlledRemote
         /// <param name="e">Depth Image Frame Ready Event Args</param>
         private void GestureDepthFrameReady(object sender, DepthImageFrameReadyEventArgs e)
         {
+            ContourAndHull(convertToEmgu());
             using (DepthImageFrame depthFrame = e.OpenDepthImageFrame())
             {
                 if (depthFrame != null)
@@ -235,13 +237,6 @@ namespace GestureControlledRemote
                     // Get the min and max reliable depth for the current frame
                     int minDepth = depthFrame.MinDepth;
                     int maxDepth = depthFrame.MaxDepth;
-
-                    // Get the avg of x values and y values of hand position
-                    int sumX = 0;
-                    int sumY = 0;
-                    int totalPixels = 0;
-                    double avgX = 0;
-                    double avgY = 0;
 
                     // Convert the depth to RGB
                     int colorPixelIndex = 0;
@@ -266,9 +261,6 @@ namespace GestureControlledRemote
                         if (depth >= minDepth && depth <= threshDepth)
                         {
                             intensity = (byte)(depth);
-                            sumX += x;
-                            sumY += y;
-                            ++totalPixels;
                         }
                         // Write out blue byte
                         this.depthcolorPixels[colorPixelIndex++] = intensity;
@@ -283,11 +275,8 @@ namespace GestureControlledRemote
                         // If we were outputting BGRA, we would write alpha here.
                         ++colorPixelIndex;
                     }
-                    if (totalPixels > 0)
-                    {
-                        avgX = (double)(sumX / totalPixels);
-                        avgY = (double)(sumY / totalPixels);
-                    }
+
+                    Seq.Text = "seq:" + _dtw.get_seq_count();
 
 
                     /// Pass off to DTW
@@ -320,22 +309,9 @@ namespace GestureControlledRemote
                             _video.RemoveAt(0);
                         }
                     }
-
-                    double[] tmp = new double[2];
-                    tmp[0] = avgX;
-                    tmp[1] = avgY;
                     
-                    _video.Add(tmp);
-
-                    Coords.Text = "(" + avgX + "," + avgY + ")";
-                    Seq.Text = "seq:" + _dtw.get_seq_count();
-
-
-
                     // Update the debug window with Sequences information
                     //dtwTextOutput.Text = _dtw.RetrieveText();
-
-
 
                     // Write the pixel data into our bitmap
                     this.depthBitmap.WritePixels(
@@ -343,8 +319,6 @@ namespace GestureControlledRemote
                         this.depthcolorPixels,
                         this.depthBitmap.PixelWidth * sizeof(int),
                         0);
-
-                    ContourAndHull(convertToEmgu());
 
                     ++_totalFrames;
 
@@ -360,7 +334,39 @@ namespace GestureControlledRemote
             }
         }
 
-        private void ContourAndHull(Image<Gray, Byte> img)
+        private double[] findHandPos(VectorOfPoint vp)
+        {
+            VectorOfPoint contours = vp;
+            // Get the avg of x values and y values of hand position
+            int sumX = 0;
+            int sumY = 0;
+            int totalPixels = 0;
+            double avgX = 0;
+            double avgY = 0;
+
+            for (int i = 0; i < contours.Size; ++i)
+            {
+                sumX += contours[i].X;
+                sumY += contours[i].Y;
+                ++totalPixels;
+            }
+
+            if (totalPixels > 0)
+            {
+                avgX = (double)(sumX / totalPixels);
+                avgY = (double)(sumY / totalPixels);
+            }
+
+            double[] tmp = new double[2];
+            tmp[0] = avgX;
+            tmp[1] = avgY;
+
+            _video.Add(tmp);
+
+            return tmp;
+        }
+
+        private VectorOfPoint ContourAndHull(Image<Gray, Byte> img)
         {
 
             // Find the max contour
@@ -385,19 +391,30 @@ namespace GestureControlledRemote
             }
 
             CvInvoke.DrawContours(img, contours, largestContourIndex, new MCvScalar(255, 0, 0),5);
+
+            double avgX = findHandPos(biggestContour)[0];
+            double avgY = findHandPos(biggestContour)[1];
+            int x = (int)avgX;
+            int y = (int)avgY;
+            Coords.Text = "(" + avgX + "," + avgY + ")";
+            CvInvoke.Circle(img, new System.Drawing.Point(x, y), 10, new MCvScalar(255, 255, 255), 10);
+
             this.emguImage.Source = BitmapSourceConvert.ToBitmapSource(img);
 
-            // Extract and draw convex hull 
-            // This part is in progress
-            //VectorOfPoint currentContour = new VectorOfPoint();
 
-            //if(biggestContour != null)
-            //{
-            //    // Toggle closed parameter if need to
-            //    CvInvoke.ApproxPolyDP(biggestContour, currentContour, CvInvoke.ArcLength(biggestContour, true), true);
+            /// Stalls the program! (Printing out the Contour Points):
+            /*
+            this.Conts.Text = "Contours:\r\n";
+            for (int i = 0; i < contours.Size; ++i)
+            {
+                for (int j = 0; j < contours[i].Size; ++j)
+                {
+                    this.Conts.Text += ("(" + contours[i][j].X + "," + contours[i][j].Y + ")\r\n");
+                }
+            }
+            */
 
-
-            //}
+            return biggestContour;
         }
 
         public static class BitmapSourceConvert
@@ -442,7 +459,7 @@ namespace GestureControlledRemote
                     this.sensor.DepthFrameReady += this.GestureDepthFrameReady;
 
                     /// Shows emgu depth image
-                    this.sensor.DepthFrameReady += this.EmguDepthFrameReady;
+                    //this.sensor.DepthFrameReady += this.EmguDepthFrameReady;
 
                     /// Capture clicks
                     this.capture.Click += captureImage;
