@@ -1,28 +1,16 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using Microsoft.Kinect;
 using Emgu.CV;
-using Emgu.CV.Util;
-using Emgu.CV.VideoSurveillance;
-using Emgu.CV.CvEnum;
 using System.IO;
 using Emgu.CV.Structure;
 using System.Drawing;
-using System.Windows.Forms;
 using System.Runtime.InteropServices;
+using Emgu.CV.Util;
+using Emgu.CV.CvEnum;
 
 namespace GestureControlledRemote
 {
@@ -90,34 +78,6 @@ namespace GestureControlledRemote
                 _video = new ArrayList();
             }
         }
-
-        /// Capture and show Emgu image
-        private void captureImage(object sender, RoutedEventArgs e)
-        {
-            Emgu.CV.UI.ImageViewer.Show(convertToEmgu());
-        }
-
-        // /Display emgu depth stream
-        private void EmguDepthFrameReady(object sender, DepthImageFrameReadyEventArgs e)
-        {
-            this.emguImage.Source = BitmapSourceConvert.ToBitmapSource(convertToEmgu());
-        }
-
-        /// Convert to Emgu
-        private Image<Gray, Byte> convertToEmgu()
-        {
-            BitmapEncoder encoder = new BmpBitmapEncoder();
-            encoder.Frames.Add(BitmapFrame.Create(this.depthBitmap));
-            MemoryStream ms = new MemoryStream();
-
-            encoder.Save(ms);
-            Bitmap b = new Bitmap(ms);
-
-            Image<Gray, Byte> img = new Image<Gray, Byte>(b);
-
-            return img;
-        }
-
 
         /// Taken from open source KinectDTW project
         /// <summary>
@@ -191,7 +151,7 @@ namespace GestureControlledRemote
                         avgY = (float)(sumY / totalPixels);
                     }
 
-
+                    ContourAndHull(convertToEmgu());
                     /// Pass off to DTW
 
                     // We need a sensible number of frames before we start attempting to match gestures against remembered sequences
@@ -231,6 +191,74 @@ namespace GestureControlledRemote
             }
         }
 
+        private void ContourAndHull(Image<Gray, Byte> img)
+        {
+
+            // Find the max contour
+            VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint();
+            VectorOfPoint biggestContour = new VectorOfPoint();
+            
+            CvInvoke.FindContours(img, contours, null, RetrType.List, ChainApproxMethod.ChainApproxSimple);
+
+            double calculatedArea = 0;
+            double maxArea = 0;
+            int largestContourIndex = 0;
+
+            for(int i = 0; i < contours.Size; ++i)
+            {
+                calculatedArea = CvInvoke.ContourArea(contours[i]);
+                if(calculatedArea > maxArea)
+                {
+                    maxArea = calculatedArea;
+                    largestContourIndex = i;
+                    biggestContour = contours[i];
+                }   
+            }
+
+            CvInvoke.DrawContours(img, contours, largestContourIndex, new MCvScalar(255, 0, 0));
+            
+            // Extract and draw convex hull 
+            // This part is in progress
+            //VectorOfPoint currentContour = new VectorOfPoint();
+
+            //if(biggestContour != null)
+            //{
+            //    // Toggle closed parameter if need to
+            //    CvInvoke.ApproxPolyDP(biggestContour, currentContour, CvInvoke.ArcLength(biggestContour, true), true);
+
+
+            //}
+        }
+
+        /// EmguCV Helper Methods
+        // Capture and show Emgu image
+        private void captureImage(object sender, RoutedEventArgs e)
+        {
+            Emgu.CV.UI.ImageViewer.Show(convertToEmgu());
+        }
+
+        // Display emgu depth stream
+        private void EmguDepthFrameReady(object sender, DepthImageFrameReadyEventArgs e)
+        {
+            this.emguImage.Source = BitmapSourceConvert.ToBitmapSource(convertToEmgu());
+        }
+
+        // Convert to Emgu
+        private Image<Gray, Byte> convertToEmgu()
+        {
+            BitmapEncoder encoder = new BmpBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(this.depthBitmap));
+            MemoryStream ms = new MemoryStream();
+
+            encoder.Save(ms);
+            Bitmap b = new Bitmap(ms);
+
+            Image<Gray, Byte> img = new Image<Gray, Byte>(b);
+
+            return img;
+        }
+
+        // Converts image to display as bitmap
         public static class BitmapSourceConvert
         {
             [DllImport("gdi32")]
@@ -254,7 +282,6 @@ namespace GestureControlledRemote
             }
         }
 
-
         /// Runs when window is loaded
         private void WindowLoaded(object sender, RoutedEventArgs e)
         {
@@ -277,7 +304,7 @@ namespace GestureControlledRemote
 
                     /// Capture clicks
                     this.capture.Click += captureImage;
-            }
+                }
                 catch (IOException)
                 {
                     sensor = null;
@@ -285,7 +312,8 @@ namespace GestureControlledRemote
             }
         }
 
-        // Cleanup 
+
+        /// Cleanup 
         private void WindowClosed(object sender, EventArgs e)
         {
             if (null != this.sensor)
