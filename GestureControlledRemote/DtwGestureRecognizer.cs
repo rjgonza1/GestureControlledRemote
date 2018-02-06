@@ -284,6 +284,8 @@ namespace GestureControlledRemote
                 }
             }
 
+            
+
             // Find best between seq2 and an ending (postfix) of seq1.
             double bestMatch = double.PositiveInfinity;
             for (int i = 1; i < (seq1R.Count + 1) - _minimumLength; i++)

@@ -47,7 +47,7 @@ namespace GestureControlledRemote
         private ArrayList _video;
         private const int MinimumFrames = 6;
         private bool _capturing;
-        private const int BufferSize = 32;
+        private const int BufferSize = 60; // 32
         /// <summary>
         /// ArrayList of coordinates which are recorded in sequence to define one gesture
         /// </summary>
@@ -89,7 +89,7 @@ namespace GestureControlledRemote
         /// Where we will save our gestures to. The app will append a data/time and .txt to this string
         /// </summary>
         // private const string GestureSaveFileLocation = @"H:\My Dropbox\Dropbox\Microsoft Kinect SDK Beta\DTWGestureRecognition\DTWGestureRecognition\";
-        private const string GestureSaveFileLocation = @"C:\Users\joshu\Desktop\";
+        private const string GestureSaveFileLocation = @"C:\Users\joshu\Desktop\Recorded Gestures\";
 
         /// <summary>
         /// Where we will save our gestures to. The app will append a data/time and .txt to this string
@@ -129,7 +129,7 @@ namespace GestureControlledRemote
                 //this.sensor.SkeletonStream.Enable();
 
                 /// Init DTW
-                _dtw = new DtwGestureRecognizer(2, 1, 3, 3, 10);
+                _dtw = new DtwGestureRecognizer(2, 10, 13, 20, 10); // 2, 7, 10, 15, 10
                 _video = new ArrayList();
             }
         }
@@ -305,8 +305,11 @@ namespace GestureControlledRemote
                         }
                         else
                         {
-                            // Remove the first frame in the buffer
-                            _video.RemoveAt(0);
+                            // Remove the first // 2 frame in the buffer
+                            for (int i = 0; i < 3; ++i)
+                            {
+                                _video.RemoveAt(0);
+                            }
                         }
                     }
                     
