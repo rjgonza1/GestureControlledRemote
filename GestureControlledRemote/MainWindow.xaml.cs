@@ -37,7 +37,7 @@ namespace GestureControlledRemote
         private WriteableBitmap depthBitmap;
         private DepthImagePixel[] depthPixels;
         private byte[] depthcolorPixels;
-        private Image<Gray, Byte> handImage;
+        //private Image<Gray, Byte> handImage;
         private double threshDepth = 1000;
 
         /// DTW
@@ -60,6 +60,30 @@ namespace GestureControlledRemote
         /// The minumum number of frames in the _video buffer before we attempt to start matching gestures
         /// </summary>
         private const int CaptureCountdownSeconds = 3;
+        /// <summary>
+        /// Total number of framed that have occurred. Used for calculating frames per second
+        /// </summary>
+        private int _totalFrames;
+        /// <summary>
+        /// The 'last time' DateTime. Used for calculating frames per second
+        /// </summary>
+        private DateTime _lastTime = DateTime.MaxValue;
+        /// <summary>
+        /// How many frames occurred 'last time'. Used for calculating frames per second
+        /// </summary>
+        private int _lastFrames;
+        /*
+        /// <summary>
+        /// How many skeleton frames to ignore (_flipFlop)
+        /// 1 = capture every frame, 2 = capture every second frame etc.
+        /// </summary>
+        private const int Ignore = 2;
+        /// <summary>
+        /// Switch used to ignore certain skeleton frames
+        /// </summary>
+        private int _flipFlop;
+        */
+
 
         /// <summary>
         /// Where we will save our gestures to. The app will append a data/time and .txt to this string
@@ -105,7 +129,7 @@ namespace GestureControlledRemote
                 //this.sensor.SkeletonStream.Enable();
 
                 /// Init DTW
-                _dtw = new DtwGestureRecognizer(2, 0.6, 2, 2, 10);
+                _dtw = new DtwGestureRecognizer(2, 1, 3, 3, 10);
                 _video = new ArrayList();
             }
         }
@@ -121,9 +145,9 @@ namespace GestureControlledRemote
             string line;
             string gestureName = String.Empty;
 
-            // TODO I'm defaulting this to 12 here for now as it meets my current need but I need to cater for variable lengths in the future
+            // TODO I'm defaulting this to 2 here for now as it meets my current need but I need to cater for variable lengths in the future
             ArrayList frames = new ArrayList();
-            double[] items = new double[12];
+            double[] items = new double[2];
 
             // Read the file and display it line by line.
             System.IO.StreamReader file = new System.IO.StreamReader(fileLocation);
@@ -139,7 +163,7 @@ namespace GestureControlledRemote
                 {
                     frames.Add(items);
                     itemCount = 0;
-                    items = new double[12];
+                    items = new double[2];
                     continue;
                 }
 
@@ -168,11 +192,14 @@ namespace GestureControlledRemote
             Emgu.CV.UI.ImageViewer.Show(convertToEmgu());
         }
 
+        
         // /Display emgu depth stream
         private void EmguDepthFrameReady(object sender, DepthImageFrameReadyEventArgs e)
         {
-            this.emguImage.Source = BitmapSourceConvert.ToBitmapSource(convertToEmgu());
+            //this.emguImage.Source = BitmapSourceConvert.ToBitmapSource(convertToEmgu());
+            ContourAndHull(convertToEmgu());
         }
+        
 
         /// Convert to Emgu
         private Image<Gray, Byte> convertToEmgu()
@@ -236,7 +263,7 @@ namespace GestureControlledRemote
                         // See the KinectDepthViewer class used by the KinectExplorer sample
                         // for a lookup table example.
                         byte intensity = (byte)(0);
-                        if (depth >= 0 && depth <= threshDepth)
+                        if (depth >= minDepth && depth <= threshDepth)
                         {
                             intensity = (byte)(depth);
                             sumX += x;
@@ -279,18 +306,6 @@ namespace GestureControlledRemote
                         }
                     }
 
-                    // We need a sensible number of frames before we start attempting to match gestures against remembered sequences
-                    if (_video.Count > MinimumFrames && _capturing == false)
-                    {
-                        ////Debug.WriteLine("Reading and video.Count=" + video.Count);
-                        string s = _dtw.Recognize(_video);
-                        if (!s.Contains("__UNKNOWN"))
-                        {
-                            // There was no match so reset the buffer
-                            _video = new ArrayList();
-                        }
-                    }
-
                     // Ensures that we remember only the last x frames
                     if (_video.Count > BufferSize)
                     {
@@ -309,9 +324,11 @@ namespace GestureControlledRemote
                     double[] tmp = new double[2];
                     tmp[0] = avgX;
                     tmp[1] = avgY;
+                    
                     _video.Add(tmp);
 
                     Coords.Text = "(" + avgX + "," + avgY + ")";
+                    Seq.Text = "seq:" + _dtw.get_seq_count();
 
 
 
@@ -327,10 +344,60 @@ namespace GestureControlledRemote
                         this.depthBitmap.PixelWidth * sizeof(int),
                         0);
 
+                    ContourAndHull(convertToEmgu());
 
+                    ++_totalFrames;
 
+                    DateTime cur = DateTime.Now;
+                    if (cur.Subtract(_lastTime) > TimeSpan.FromSeconds(1))
+                    {
+                        int frameDiff = _totalFrames - _lastFrames;
+                        _lastFrames = _totalFrames;
+                        _lastTime = cur;
+                        frameRate.Text = frameDiff + " fps";
+                    }
                 }
             }
+        }
+
+        private void ContourAndHull(Image<Gray, Byte> img)
+        {
+
+            // Find the max contour
+            VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint();
+            VectorOfPoint biggestContour = new VectorOfPoint();
+
+            CvInvoke.FindContours(img, contours, null, RetrType.List, ChainApproxMethod.ChainApproxSimple);
+
+            double calculatedArea = 0;
+            double maxArea = 0;
+            int largestContourIndex = 0;
+
+            for (int i = 0; i < contours.Size; ++i)
+            {
+                calculatedArea = CvInvoke.ContourArea(contours[i]);
+                if (calculatedArea > maxArea)
+                {
+                    maxArea = calculatedArea;
+                    largestContourIndex = i;
+                    biggestContour = contours[i];
+                }
+            }
+
+            CvInvoke.DrawContours(img, contours, largestContourIndex, new MCvScalar(255, 0, 0),5);
+            this.emguImage.Source = BitmapSourceConvert.ToBitmapSource(img);
+
+            // Extract and draw convex hull 
+            // This part is in progress
+            //VectorOfPoint currentContour = new VectorOfPoint();
+
+            //if(biggestContour != null)
+            //{
+            //    // Toggle closed parameter if need to
+            //    CvInvoke.ApproxPolyDP(biggestContour, currentContour, CvInvoke.ArcLength(biggestContour, true), true);
+
+
+            //}
         }
 
         public static class BitmapSourceConvert

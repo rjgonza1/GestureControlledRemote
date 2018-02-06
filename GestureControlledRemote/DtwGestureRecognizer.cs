@@ -115,6 +115,11 @@ namespace GestureControlledRemote
             _minimumLength = minLen;
         }
 
+        public int get_seq_count()
+        {
+            return _sequences.Count;
+        }
+
         /// <summary>
         /// Add a seqence with a label to the known sequences library.
         /// The gesture MUST start on the first observation of the sequence and end on the last one.
@@ -321,17 +326,6 @@ namespace GestureControlledRemote
             for (int i = 0; i < _dimension; i++)
             {
                 d += Math.Pow(a[i] - b[i], 2);
-            }
-
-            return Math.Sqrt(d);
-        }
-
-        private double Dist2(float[] a, float[] b)
-        {
-            double d = 0;
-            for (int i = 0; i < _dimension; i++)
-            {
-                d += Math.Pow((double)a[i] - (double)b[i], 2);
             }
 
             return Math.Sqrt(d);
