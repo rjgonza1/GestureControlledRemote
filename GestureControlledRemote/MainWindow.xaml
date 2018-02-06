@@ -24,21 +24,11 @@
         <!--<TextBox Grid.Column="1" Grid.Row="5" FontSize="11" Name="Tabs" Margin="0,40,0,0" Focusable="True" TextAlignment="Left" HorizontalAlignment="Left" VerticalAlignment="Top" Width="300" Height="230" TextWrapping="WrapWithOverflow" RenderTransformOrigin="0.696,0.653" Text=""/>-->
         <StackPanel HorizontalAlignment="Left" Margin="0,268,0,0">
             <ComboBox Name="gestureList" Width="400">
-                <ComboBoxItem IsSelected="True">@Right hand swipe left</ComboBoxItem>
-                <ComboBoxItem>@Right hand swipe right</ComboBoxItem>
-                <ComboBoxItem>@Left hand swipe left</ComboBoxItem>
-                <ComboBoxItem>@Left hand swipe right</ComboBoxItem>
-                <ComboBoxItem>@Two hands zoom in</ComboBoxItem>
-                <ComboBoxItem>@Two hands zoom out</ComboBoxItem>
-                <ComboBoxItem>@Right hand wave</ComboBoxItem>
-                <ComboBoxItem>@Left hand wave</ComboBoxItem>
-                <ComboBoxItem>@Right hand pull down</ComboBoxItem>
-                <ComboBoxItem>@Left hand pull down</ComboBoxItem>
-                <ComboBoxItem>@Right hand push up</ComboBoxItem>
-                <ComboBoxItem>@Left hand push up</ComboBoxItem>
-                <ComboBoxItem>@Both hands pull down</ComboBoxItem>
-                <ComboBoxItem>@Both hands push up</ComboBoxItem>
-                <ComboBoxItem>@Get on down at the disco!</ComboBoxItem>
+                <ComboBoxItem IsSelected="True">@Ready Signal</ComboBoxItem>
+                <ComboBoxItem>@Channel Up</ComboBoxItem>
+                <ComboBoxItem>@Channel Down</ComboBoxItem>
+                <ComboBoxItem>@Volume Up</ComboBoxItem>
+                <ComboBoxItem>@Volume Down</ComboBoxItem>
             </ComboBox>
             <TextBox FontSize="14" Name="results" Margin="0,0,0,0" Focusable="False" BorderThickness="0" Text="" TextAlignment="Left" HorizontalAlignment="Left" VerticalAlignment="Top" Width="400" Height="20" />
             <TextBox FontSize="14" Name="status" Margin="0,0,0,0" Focusable="False" BorderThickness="0" Text="" TextAlignment="Left" HorizontalAlignment="Left" VerticalAlignment="Top" Width="400" Height="20" />
