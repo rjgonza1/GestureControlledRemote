@@ -115,6 +115,11 @@ namespace GestureControlledRemote
             _minimumLength = minLen;
         }
 
+        public int get_seq_count()
+        {
+            return _sequences.Count;
+        }
+
         /// <summary>
         /// Add a seqence with a label to the known sequences library.
         /// The gesture MUST start on the first observation of the sequence and end on the last one.
@@ -278,6 +283,8 @@ namespace GestureControlledRemote
                     }
                 }
             }
+
+            
 
             // Find best between seq2 and an ending (postfix) of seq1.
             double bestMatch = double.PositiveInfinity;
