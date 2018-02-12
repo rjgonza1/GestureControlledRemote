@@ -129,7 +129,7 @@ namespace GestureControlledRemote
                 //this.sensor.SkeletonStream.Enable();
 
                 /// Init DTW
-                _dtw = new DtwGestureRecognizer(2, 10, 13, 20, 10); // 2, 7, 10, 15, 10
+                _dtw = new DtwGestureRecognizer(12, 10, 13, 20, 10); // 2, 10, 13, 20, 10
                 _video = new ArrayList();
             }
         }
@@ -364,7 +364,7 @@ namespace GestureControlledRemote
             tmp[0] = avgX;
             tmp[1] = avgY;
 
-            _video.Add(tmp);
+            //_video.Add(tmp);
 
             return tmp;
         }
@@ -394,13 +394,19 @@ namespace GestureControlledRemote
             }
 
 
-
+            VectorOfPoint currentContour = new VectorOfPoint();
+            VectorOfPoint hull = new VectorOfPoint();
             if (biggestContour != null)
             {
-                VectorOfPoint currentContour = new VectorOfPoint();
-                VectorOfPoint hull = new VectorOfPoint();
                 CvInvoke.ApproxPolyDP(biggestContour, currentContour, CvInvoke.ArcLength(biggestContour, true) * .025, true);
                 biggestContour = currentContour;
+
+                double avgX = findHandPos(biggestContour)[0];
+                double avgY = findHandPos(biggestContour)[1];
+                int x = (int)avgX;
+                int y = (int)avgY;
+                //Coords.Text = "(" + avgX + "," + avgY + ")";
+                CvInvoke.Circle(img, new System.Drawing.Point(x, y), 10, new MCvScalar(255, 255, 255), 10);
 
                 CvInvoke.ConvexHull(biggestContour, hull, true);
                 RotatedRect bound = CvInvoke.MinAreaRect(biggestContour);
@@ -413,13 +419,63 @@ namespace GestureControlledRemote
                 {
                     CvInvoke.Circle(img, System.Drawing.Point.Round(new System.Drawing.PointF(hull[i].X, hull[i].Y)), 10, new MCvScalar(255, 255, 255), 10);
                 }
-            }           
-            //double avgX = findHandPos(biggestContour)[0];
-            //double avgY = findHandPos(biggestContour)[1];
-            //int x = (int)avgX;
-            //int y = (int)avgY;
-            //Coords.Text = "(" + avgX + "," + avgY + ")";
-            //CvInvoke.Circle(img, new System.Drawing.Point(x, y), 10, new MCvScalar(255, 255, 255), 10);
+
+                
+                ////
+                //VectorOfPoint fingers = new VectorOfPoint();
+
+                // fingers is an array of fingertip positions.
+
+                double[] tmp = new double[12];
+                Array.Clear(tmp, 0, 12);
+                //int j = 0;
+                /*
+                while (j < 10*//*5 fingers, (x,y)*//*)
+                {
+                    if (2*hull.Size >= j && j != 2 && j != 4)
+                    {
+                        tmp[j] = hull[j/2].X;
+                        tmp[j + 1] = hull[j/2].Y;
+                    }
+                    else
+                    {
+                        tmp[j] = 0;
+                        tmp[j + 1] = 0;
+                    }
+                    j += 2;
+                }
+                */
+                if (hull.Size > 0)
+                {
+                    tmp[0] = hull[0].X;
+                    tmp[1] = hull[0].Y;
+                }
+                if (hull.Size > 3)
+                {
+                    tmp[2] = hull[3].X;
+                    tmp[3] = hull[3].Y;
+                }
+                if (hull.Size > 4)
+                {
+                    tmp[4] = hull[4].X;
+                    tmp[5] = hull[4].Y;
+                }
+                if (hull.Size > 5)
+                {
+                    tmp[6] = hull[5].X;
+                    tmp[7] = hull[5].Y;
+                }
+                if (hull.Size > 6)
+                {
+                    tmp[8] = hull[6].X;
+                    tmp[9] = hull[6].Y;
+                }
+                tmp[10] = avgX;
+                tmp[11] = avgY;
+                _video.Add(tmp);
+                
+            }
+            
 
             this.emguImage.Source = BitmapSourceConvert.ToBitmapSource(img);
 
