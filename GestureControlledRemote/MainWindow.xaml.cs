@@ -374,7 +374,7 @@ namespace GestureControlledRemote
 
             // Find the max contour
             VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint();
-            VectorOfPoint biggestContour = new VectorOfPoint();
+            VectorOfPoint biggestContour = null;
 
             CvInvoke.FindContours(img, contours, null, RetrType.List, ChainApproxMethod.ChainApproxSimple);
 
@@ -393,29 +393,35 @@ namespace GestureControlledRemote
                 }
             }
 
-            CvInvoke.DrawContours(img, contours, largestContourIndex, new MCvScalar(255, 0, 0),5);
 
-            double avgX = findHandPos(biggestContour)[0];
-            double avgY = findHandPos(biggestContour)[1];
-            int x = (int)avgX;
-            int y = (int)avgY;
-            Coords.Text = "(" + avgX + "," + avgY + ")";
-            CvInvoke.Circle(img, new System.Drawing.Point(x, y), 10, new MCvScalar(255, 255, 255), 10);
+
+            if (biggestContour != null)
+            {
+                VectorOfPoint currentContour = new VectorOfPoint();
+                VectorOfPoint hull = new VectorOfPoint();
+                CvInvoke.ApproxPolyDP(biggestContour, currentContour, CvInvoke.ArcLength(biggestContour, true) * .025, true);
+                biggestContour = currentContour;
+
+                CvInvoke.ConvexHull(biggestContour, hull, true);
+                RotatedRect bound = CvInvoke.MinAreaRect(biggestContour);
+                PointF[] vertices = bound.GetVertices();
+
+                CvInvoke.DrawContours(img, contours, largestContourIndex, new MCvScalar(255, 0, 0), 5);
+                CvInvoke.Polylines(img, hull.ToArray(), true, new MCvScalar(255, 255, 255), 10);
+
+                for (int i = 0; i < hull.Size; ++i)
+                {
+                    CvInvoke.Circle(img, System.Drawing.Point.Round(new System.Drawing.PointF(hull[i].X, hull[i].Y)), 10, new MCvScalar(255, 255, 255), 10);
+                }
+            }           
+            //double avgX = findHandPos(biggestContour)[0];
+            //double avgY = findHandPos(biggestContour)[1];
+            //int x = (int)avgX;
+            //int y = (int)avgY;
+            //Coords.Text = "(" + avgX + "," + avgY + ")";
+            //CvInvoke.Circle(img, new System.Drawing.Point(x, y), 10, new MCvScalar(255, 255, 255), 10);
 
             this.emguImage.Source = BitmapSourceConvert.ToBitmapSource(img);
-
-
-            /// Stalls the program! (Printing out the Contour Points):
-            /*
-            this.Conts.Text = "Contours:\r\n";
-            for (int i = 0; i < contours.Size; ++i)
-            {
-                for (int j = 0; j < contours[i].Size; ++j)
-                {
-                    this.Conts.Text += ("(" + contours[i][j].X + "," + contours[i][j].Y + ")\r\n");
-                }
-            }
-            */
 
             return biggestContour;
         }
