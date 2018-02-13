@@ -42,6 +42,7 @@ namespace GestureControlledRemote
 
         /// DTW
         private DtwGestureRecognizer _dtw;
+        private int _dimension = 10;
 
         /// Video
         private ArrayList _video;
@@ -129,7 +130,7 @@ namespace GestureControlledRemote
                 //this.sensor.SkeletonStream.Enable();
 
                 /// Init DTW
-                _dtw = new DtwGestureRecognizer(12, 10, 13, 20, 10); // 2, 10, 13, 20, 10
+                _dtw = new DtwGestureRecognizer(_dimension, 30, 40, 13, 30); // 12, 10, 13, 20, 10    12, 20, 30, 40, 20
                 _video = new ArrayList();
             }
         }
@@ -147,7 +148,7 @@ namespace GestureControlledRemote
 
             // TODO I'm defaulting this to 2 here for now as it meets my current need but I need to cater for variable lengths in the future
             ArrayList frames = new ArrayList();
-            double[] items = new double[2];
+            double[] items = new double[_dimension];
 
             // Read the file and display it line by line.
             System.IO.StreamReader file = new System.IO.StreamReader(fileLocation);
@@ -163,7 +164,7 @@ namespace GestureControlledRemote
                 {
                     frames.Add(items);
                     itemCount = 0;
-                    items = new double[2];
+                    items = new double[_dimension];
                     continue;
                 }
 
@@ -426,8 +427,8 @@ namespace GestureControlledRemote
 
                 // fingers is an array of fingertip positions.
 
-                double[] tmp = new double[12];
-                Array.Clear(tmp, 0, 12);
+                double[] tmp = new double[_dimension];
+                Array.Clear(tmp, 0, _dimension);
                 //int j = 0;
                 /*
                 while (j < 10*//*5 fingers, (x,y)*//*)
@@ -470,10 +471,11 @@ namespace GestureControlledRemote
                     tmp[8] = hull[6].X;
                     tmp[9] = hull[6].Y;
                 }
+                /*
                 tmp[10] = avgX;
                 tmp[11] = avgY;
+                */
                 _video.Add(tmp);
-                
             }
             
 
