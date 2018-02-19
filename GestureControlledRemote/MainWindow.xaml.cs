@@ -90,7 +90,7 @@ namespace GestureControlledRemote
         /// Where we will save our gestures to. The app will append a data/time and .txt to this string
         /// </summary>
         // private const string GestureSaveFileLocation = @"H:\My Dropbox\Dropbox\Microsoft Kinect SDK Beta\DTWGestureRecognition\DTWGestureRecognition\";
-        private const string GestureSaveFileLocation = @"C:\Users\joshu\Desktop\Recorded Gestures\";
+        private const string GestureSaveFileLocation = @"C:\Users\rjgon_000\Desktop\Recorded Gestures\";
 
         /// <summary>
         /// Where we will save our gestures to. The app will append a data/time and .txt to this string
@@ -452,36 +452,36 @@ namespace GestureControlledRemote
                 {
                     tmp[0] = hull[0].X;
                     tmp[1] = hull[0].Y;
-                    Thumb.Text = "Thumb: (" + tmp[0] + "," + tmp[1] + ")";
+                    //Thumb.Text = "Thumb: (" + tmp[0] + "," + tmp[1] + ")";
                 }
                 if (hull.Size > 3)
                 {
                     tmp[2] = hull[3].X;
                     tmp[3] = hull[3].Y;
-                    Index.Text = "Index: (" + tmp[2] + "," + tmp[3] + ")";
+                    //Index.Text = "Index: (" + tmp[2] + "," + tmp[3] + ")";
                 }
                 if (hull.Size > 4)
                 {
                     tmp[4] = hull[4].X;
                     tmp[5] = hull[4].Y;
-                    Middle.Text = "Middle: (" + tmp[4] + "," + tmp[5] + ")";
+                    //Middle.Text = "Middle: (" + tmp[4] + "," + tmp[5] + ")";
                 }
                 if (hull.Size > 5)
                 {
                     tmp[6] = hull[5].X;
                     tmp[7] = hull[5].Y;
-                    Ring.Text = "Ring: (" + tmp[6] + "," + tmp[7] + ")";
+                    //Ring.Text = "Ring: (" + tmp[6] + "," + tmp[7] + ")";
                 }
                 if (hull.Size > 6)
                 {
                     tmp[8] = hull[6].X;
                     tmp[9] = hull[6].Y;
-                    Pinky.Text = "Pinky: (" + tmp[8] + "," + tmp[9] + ")";
+                    //Pinky.Text = "Pinky: (" + tmp[8] + "," + tmp[9] + ")";
                 }
                 
                 tmp[10] = avgX;
                 tmp[11] = avgY;
-                Palm.Text = "Palm: (" + tmp[10] + "," + tmp[11] + ")";
+                //Palm.Text = "Palm: (" + tmp[10] + "," + tmp[11] + ")";
                 
                 _video.Add(tmp);
             }
