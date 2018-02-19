@@ -227,6 +227,57 @@ namespace GestureControlledRemote
             return retStr;
         }
 
+        // For Modeling Data
+        public string RetrieveText1()
+        {
+            string retStr = String.Empty;
+
+            if (_sequences != null)
+            {
+                // Iterate through each gesture
+                for (int gestureNum = 0; gestureNum < _sequences.Count; gestureNum++)
+                {
+                    /*
+                    // Echo the label
+                    retStr += _labels[gestureNum] + "\r\n";
+                    */
+                    
+
+                    int frameNum = 0;
+
+                    //foreach (double[] frame in ((ArrayList)_sequences[gestureNum]))
+                    double[] frame1 = (double[])((ArrayList)_sequences[gestureNum])[0];
+                    int totFrames = ((ArrayList)_sequences[gestureNum]).Count;
+                    double[] frame2 = (double[])((ArrayList)_sequences[gestureNum])[totFrames-1];
+
+                    // Extract each double
+                    //foreach (double dub in (double[])frame1)
+                    for (int i = 0; i < frame1.Length-1;)
+                    {
+                        // Extract each double
+                        retStr += "(";
+                        retStr += (frame2[i] - frame1[i]); // dx
+                        retStr += ",";
+                        retStr += (frame2[i+1] - frame1[i+1]); // dy
+                        retStr += ") ";
+
+                        i += 2;
+                    }
+                    
+
+
+                    
+
+                    frameNum++;
+
+
+                    retStr += "\r\n";
+                }
+            }
+
+            return retStr;
+        }
+
         /// <summary>
         /// Compute the min DTW distance between seq2 and all possible endings of seq1.
         /// </summary>

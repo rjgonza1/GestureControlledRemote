@@ -12,6 +12,12 @@
         <Button x:Name="capture" Content="Capture" HorizontalAlignment="Left" Height="27" Margin="10,10,0,0" VerticalAlignment="Top" Width="106"/>
         <TextBox FontSize="14" Name="Coords" Margin="0,0,0,0" Focusable="False" BorderThickness="0" Text="" TextAlignment="Right" HorizontalAlignment="Right" VerticalAlignment="Top" Width="400" Height="20" />
         <TextBox FontSize="14" Name="Seq" Margin="0,25,-0.4,0" Focusable="False" BorderThickness="0" Text="" TextAlignment="Right" HorizontalAlignment="Right" VerticalAlignment="Top" Width="400" Height="20" />
+        <TextBox FontSize="10" Name="Thumb" Focusable="False"   BorderThickness="0" Text="Thumb"    TextAlignment="Right" HorizontalAlignment="Right" VerticalAlignment="Top" Width="400" Height="20" Margin="0,45,-0.4,0" />
+        <TextBox FontSize="10" Name="Index" Focusable="False"   BorderThickness="0" Text="Index"    TextAlignment="Right" HorizontalAlignment="Right" VerticalAlignment="Top" Width="400" Height="20" Margin="0,60,-0.4,0" />
+        <TextBox FontSize="10" Name="Middle" Focusable="False"   BorderThickness="0" Text="Middle"    TextAlignment="Right" HorizontalAlignment="Right" VerticalAlignment="Top" Width="400" Height="20" Margin="0,75,-0.4,0" />
+        <TextBox FontSize="10" Name="Ring" Focusable="False"   BorderThickness="0" Text="Ring"    TextAlignment="Right" HorizontalAlignment="Right" VerticalAlignment="Top" Width="400" Height="20" Margin="0,90,-0.4,0" />
+        <TextBox FontSize="10" Name="Pinky" Focusable="False"   BorderThickness="0" Text="Pinky"    TextAlignment="Right" HorizontalAlignment="Right" VerticalAlignment="Top" Width="400" Height="20" Margin="0,105,-0.4,0" />
+        <TextBox FontSize="10" Name="Palm" Focusable="False"   BorderThickness="0" Text="Palm"    TextAlignment="Right" HorizontalAlignment="Right" VerticalAlignment="Top" Width="400" Height="20" Margin="0,120,-0.4,0" />
         <StackPanel Grid.Column="0" Grid.Row="1">
             <Button Name="dtwRead" Content="Read" Click="DtwReadClick" Width="200" IsEnabled="False" />
             <Button Name="dtwCapture" Content="Capture" Click="DtwCaptureClick" Width="200 "/>
@@ -35,7 +41,7 @@
             <TextBox FontSize="14" Name="currentBufferFrame" Margin="0,0,0,0" Focusable="False" BorderThickness="0" Text="" TextAlignment="Left" HorizontalAlignment="Left" VerticalAlignment="Top" Width="400" Height="20" />
             <TextBox FontSize="14" Name="frameRate" Margin="0,0,0,0" Focusable="False" BorderThickness="0" Text="fps:" TextAlignment="Left" HorizontalAlignment="Left" VerticalAlignment="Top" Width="400" Height="20" />
         </StackPanel>
-        <TextBox Grid.Column="0" FontSize="11" Name="dtwTextOutput" Margin="0,10,297.6,492" Focusable="True" BorderThickness="0" Text="" TextAlignment="Left" HorizontalAlignment="Right" VerticalAlignment="Center" Width="200" Height="142" VerticalScrollBarVisibility="Auto" IsReadOnly="True" />
+        <TextBox Grid.Column="0" FontSize="11" Name="dtwTextOutput" Margin="0,10,336.6,492" Focusable="True" BorderThickness="0" Text="" TextAlignment="Left" HorizontalAlignment="Right" VerticalAlignment="Center" Width="200" Height="142" VerticalScrollBarVisibility="Auto" IsReadOnly="True" RenderTransformOrigin="-0.105,0.553" />
     </Grid>
 
 </Window>

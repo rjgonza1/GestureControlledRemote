@@ -38,11 +38,11 @@ namespace GestureControlledRemote
         private DepthImagePixel[] depthPixels;
         private byte[] depthcolorPixels;
         //private Image<Gray, Byte> handImage;
-        private double threshDepth = 1000;
+        private double threshDepth = 800; // 1000
 
         /// DTW
         private DtwGestureRecognizer _dtw;
-        private int _dimension = 10;
+        private int _dimension = 12;
 
         /// Video
         private ArrayList _video;
@@ -96,6 +96,7 @@ namespace GestureControlledRemote
         /// Where we will save our gestures to. The app will append a data/time and .txt to this string
         /// </summary>
         private const string GestureSaveFileNamePrefix = @"RecordedGestures";
+        private const string ModelingSaveFileNamePrefix = @"Modeling";
 
         public MainWindow()
         {
@@ -259,7 +260,8 @@ namespace GestureControlledRemote
                         // See the KinectDepthViewer class used by the KinectExplorer sample
                         // for a lookup table example.
                         byte intensity = (byte)(0);
-                        if (depth >= minDepth && depth <= threshDepth)
+                        //if (depth >= minDepth && depth <= threshDepth)
+                        if (depth >= 180 && depth <= threshDepth)
                         {
                             intensity = (byte)(depth);
                         }
@@ -450,31 +452,37 @@ namespace GestureControlledRemote
                 {
                     tmp[0] = hull[0].X;
                     tmp[1] = hull[0].Y;
+                    Thumb.Text = "Thumb: (" + tmp[0] + "," + tmp[1] + ")";
                 }
                 if (hull.Size > 3)
                 {
                     tmp[2] = hull[3].X;
                     tmp[3] = hull[3].Y;
+                    Index.Text = "Index: (" + tmp[2] + "," + tmp[3] + ")";
                 }
                 if (hull.Size > 4)
                 {
                     tmp[4] = hull[4].X;
                     tmp[5] = hull[4].Y;
+                    Middle.Text = "Middle: (" + tmp[4] + "," + tmp[5] + ")";
                 }
                 if (hull.Size > 5)
                 {
                     tmp[6] = hull[5].X;
                     tmp[7] = hull[5].Y;
+                    Ring.Text = "Ring: (" + tmp[6] + "," + tmp[7] + ")";
                 }
                 if (hull.Size > 6)
                 {
                     tmp[8] = hull[6].X;
                     tmp[9] = hull[6].Y;
+                    Pinky.Text = "Pinky: (" + tmp[8] + "," + tmp[9] + ")";
                 }
-                /*
+                
                 tmp[10] = avgX;
                 tmp[11] = avgY;
-                */
+                Palm.Text = "Palm: (" + tmp[10] + "," + tmp[11] + ")";
+                
                 _video.Add(tmp);
             }
             
@@ -666,6 +674,10 @@ namespace GestureControlledRemote
             string fileName = GestureSaveFileNamePrefix + DateTime.Now.ToString("yyyy-MM-dd_HH-mm") + ".txt";
             System.IO.File.WriteAllText(GestureSaveFileLocation + fileName, _dtw.RetrieveText());
             status.Text = "Saved to " + fileName;
+
+            string fileName_modeling = ModelingSaveFileNamePrefix + ".txt";
+            //System.IO.File.WriteAllText(GestureSaveFileLocation + fileName_modeling, _dtw.RetrieveText1());
+            System.IO.File.AppendAllText(GestureSaveFileLocation + fileName_modeling, _dtw.RetrieveText1());
         }
 
         /// <summary>
