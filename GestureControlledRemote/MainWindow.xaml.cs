@@ -38,7 +38,7 @@ namespace GestureControlledRemote
         private DepthImagePixel[] depthPixels;
         private byte[] depthcolorPixels;
         //private Image<Gray, Byte> handImage;
-        private double threshDepth = 800; // 1000
+        private double threshDepth = 700; // 1000
 
         /// DTW
         private DtwGestureRecognizer _dtw;
@@ -193,16 +193,6 @@ namespace GestureControlledRemote
         {
             Emgu.CV.UI.ImageViewer.Show(convertToEmgu());
         }
-
-        /*
-        // /Display emgu depth stream
-        private void EmguDepthFrameReady(object sender, DepthImageFrameReadyEventArgs e)
-        {
-            //this.emguImage.Source = BitmapSourceConvert.ToBitmapSource(convertToEmgu());
-            ContourAndHull(convertToEmgu());
-        }
-        */
-        
 
         /// Convert to Emgu
         private Image<Gray, Byte> convertToEmgu()
@@ -375,7 +365,7 @@ namespace GestureControlledRemote
         private VectorOfPoint ContourAndHull(Image<Gray, Byte> img)
         {
 
-            // Find the max contour
+            /// Find the max contour
             VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint();
             VectorOfPoint biggestContour = null;
 
@@ -396,96 +386,94 @@ namespace GestureControlledRemote
                 }
             }
 
-
+            /// Calculate convex hull
             VectorOfPoint currentContour = new VectorOfPoint();
-            VectorOfPoint hull = new VectorOfPoint();
+            VectorOfPoint hullPoints = new VectorOfPoint();
+            VectorOfInt hullIndices = new VectorOfInt();
+            double avgX = 0.0;
+            double avgY = 0.0;
             if (biggestContour != null)
             {
                 CvInvoke.ApproxPolyDP(biggestContour, currentContour, CvInvoke.ArcLength(biggestContour, true) * .025, true);
                 biggestContour = currentContour;
 
-                double avgX = findHandPos(biggestContour)[0];
-                double avgY = findHandPos(biggestContour)[1];
+                avgX = findHandPos(biggestContour)[0];
+                avgY = findHandPos(biggestContour)[1];
                 int x = (int)avgX;
                 int y = (int)avgY;
-                //Coords.Text = "(" + avgX + "," + avgY + ")";
+
                 CvInvoke.Circle(img, new System.Drawing.Point(x, y), 10, new MCvScalar(255, 255, 255), 10);
 
-                CvInvoke.ConvexHull(biggestContour, hull, true);
+                CvInvoke.ConvexHull(biggestContour, hullIndices, true, false);
+                CvInvoke.ConvexHull(biggestContour, hullPoints, true);
                 RotatedRect bound = CvInvoke.MinAreaRect(biggestContour);
-                PointF[] vertices = bound.GetVertices();
 
+                /// Calcualate convexity defects
+                /// Defects is a 4-element integer vector
+                /// (start_index, end_index, farthest_pt_index, fixpt_depth)
+                /// stored in a matrix where each row is a defect
+                Mat mat = new Mat();
+                CvInvoke.ConvexityDefects(biggestContour, hullIndices, mat);
+                if(mat.Rows > 0)
+                {
+                    Matrix<int> defects = new Matrix<int>(mat.Rows, mat.Cols, mat.NumberOfChannels);
+                    mat.CopyTo(defects);
+                    /// channel[0] = start_point, channel[1] = end_point, channel[2] = fixpt_depth
+                    Matrix<int>[] channels = defects.Split();
+
+                    for (int j = 0; j < defects.Rows; ++j)
+                    {
+                        CvInvoke.Circle(img, System.Drawing.Point.Round(new System.Drawing.PointF(biggestContour[channels[0][j, 0]].X, biggestContour[channels[0][j, 0]].Y)), 10, new MCvScalar(255, 255, 255), 10);
+                        CvInvoke.Circle(img, System.Drawing.Point.Round(new System.Drawing.PointF(biggestContour[channels[1][j, 0]].X, biggestContour[channels[1][j, 0]].Y)), 10, new MCvScalar(255, 255, 255), 10);
+                    }
+                }
+                
+
+                /// Draw contours and convex hull
                 CvInvoke.DrawContours(img, contours, largestContourIndex, new MCvScalar(255, 0, 0), 5);
-                CvInvoke.Polylines(img, hull.ToArray(), true, new MCvScalar(255, 255, 255), 10);
+                CvInvoke.Polylines(img, hullPoints.ToArray(), true, new MCvScalar(255, 255, 255), 10);
 
-                for (int i = 0; i < hull.Size; ++i)
-                {
-                    CvInvoke.Circle(img, System.Drawing.Point.Round(new System.Drawing.PointF(hull[i].X, hull[i].Y)), 10, new MCvScalar(255, 255, 255), 10);
-                }
-
-                
-                ////
-                //VectorOfPoint fingers = new VectorOfPoint();
-
-                // fingers is an array of fingertip positions.
-
-                double[] tmp = new double[_dimension];
-                Array.Clear(tmp, 0, _dimension);
-                //int j = 0;
-                /*
-                while (j < 10*//*5 fingers, (x,y)*//*)
-                {
-                    if (2*hull.Size >= j && j != 2 && j != 4)
-                    {
-                        tmp[j] = hull[j/2].X;
-                        tmp[j + 1] = hull[j/2].Y;
-                    }
-                    else
-                    {
-                        tmp[j] = 0;
-                        tmp[j + 1] = 0;
-                    }
-                    j += 2;
-                }
-                */
-                if (hull.Size > 0)
-                {
-                    tmp[0] = hull[0].X;
-                    tmp[1] = hull[0].Y;
-                    //Thumb.Text = "Thumb: (" + tmp[0] + "," + tmp[1] + ")";
-                }
-                if (hull.Size > 3)
-                {
-                    tmp[2] = hull[3].X;
-                    tmp[3] = hull[3].Y;
-                    //Index.Text = "Index: (" + tmp[2] + "," + tmp[3] + ")";
-                }
-                if (hull.Size > 4)
-                {
-                    tmp[4] = hull[4].X;
-                    tmp[5] = hull[4].Y;
-                    //Middle.Text = "Middle: (" + tmp[4] + "," + tmp[5] + ")";
-                }
-                if (hull.Size > 5)
-                {
-                    tmp[6] = hull[5].X;
-                    tmp[7] = hull[5].Y;
-                    //Ring.Text = "Ring: (" + tmp[6] + "," + tmp[7] + ")";
-                }
-                if (hull.Size > 6)
-                {
-                    tmp[8] = hull[6].X;
-                    tmp[9] = hull[6].Y;
-                    //Pinky.Text = "Pinky: (" + tmp[8] + "," + tmp[9] + ")";
-                }
-                
-                tmp[10] = avgX;
-                tmp[11] = avgY;
-                //Palm.Text = "Palm: (" + tmp[10] + "," + tmp[11] + ")";
-                
-                _video.Add(tmp);
+                //for (int i = 0; i < hullPoints.Size; ++i)
+                //{
+                //    CvInvoke.Circle(img, System.Drawing.Point.Round(new System.Drawing.PointF(hullPoints[i].X, hullPoints[i].Y)), 10, new MCvScalar(255, 255, 255), 10);
+                //}
             }
+
             
+
+            /// Store indices that are finger points and palm
+            //double[] tmp = new double[_dimension];
+            //Array.Clear(tmp, 0, _dimension);
+            //if (hull.Size > 0)
+            //{
+            //    tmp[0] = hull[0].X;
+            //    tmp[1] = hull[0].Y;
+            //}
+            //if (hull.Size > 2)
+            //{
+            //    tmp[2] = hull[2].X;
+            //    tmp[3] = hull[2].Y;
+            //}
+            //if (hull.Size > 3)
+            //{
+            //    tmp[4] = hull[3].X;
+            //    tmp[5] = hull[3].Y;
+            //}
+            //if (hull.Size > 4)
+            //{
+            //    tmp[6] = hull[4].X;
+            //    tmp[7] = hull[4].Y;
+            //}
+            //if (hull.Size > 5)
+            //{
+            //    tmp[8] = hull[5].X;
+            //    tmp[9] = hull[5].Y;
+            //}
+
+            //tmp[10] = avgX;
+            //tmp[11] = avgY;
+
+            //_video.Add(tmp);
 
             this.emguImage.Source = BitmapSourceConvert.ToBitmapSource(img);
 

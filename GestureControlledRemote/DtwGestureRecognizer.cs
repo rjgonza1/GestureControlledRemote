@@ -255,21 +255,14 @@ namespace GestureControlledRemote
                     for (int i = 0; i < frame1.Length-1;)
                     {
                         // Extract each double
-                        retStr += "(";
                         retStr += (frame2[i] - frame1[i]); // dx
-                        retStr += ",";
-                        retStr += (frame2[i+1] - frame1[i+1]); // dy
-                        retStr += ") ";
+                        retStr += " ";
+                        retStr += (frame2[i+1] - frame1[i+1]) + " "; // dy
 
                         i += 2;
-                    }
-                    
-
-
-                    
+                    } 
 
                     frameNum++;
-
 
                     retStr += "\r\n";
                 }
