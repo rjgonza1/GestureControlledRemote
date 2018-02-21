@@ -38,7 +38,7 @@ namespace GestureControlledRemote
         private DepthImagePixel[] depthPixels;
         private byte[] depthcolorPixels;
         //private Image<Gray, Byte> handImage;
-        private double threshDepth = 700; // 1000
+        private double threshDepth = 800; // 1000
 
         /// DTW
         private DtwGestureRecognizer _dtw;
@@ -394,7 +394,7 @@ namespace GestureControlledRemote
             double avgY = 0.0;
             if (biggestContour != null)
             {
-                CvInvoke.ApproxPolyDP(biggestContour, currentContour, CvInvoke.ArcLength(biggestContour, true) * .025, true);
+                CvInvoke.ApproxPolyDP(biggestContour, currentContour, CvInvoke.ArcLength(biggestContour, true) * .005, true);
                 biggestContour = currentContour;
 
                 avgX = findHandPos(biggestContour)[0];
@@ -404,10 +404,9 @@ namespace GestureControlledRemote
 
                 CvInvoke.Circle(img, new System.Drawing.Point(x, y), 10, new MCvScalar(255, 255, 255), 10);
 
-                CvInvoke.ConvexHull(biggestContour, hullIndices, true, false);
-                CvInvoke.ConvexHull(biggestContour, hullPoints, true);
-                RotatedRect bound = CvInvoke.MinAreaRect(biggestContour);
-
+                CvInvoke.ConvexHull(biggestContour, hullIndices, false, false);
+                CvInvoke.ConvexHull(biggestContour, hullPoints, false);
+                
                 /// Calcualate convexity defects
                 /// Defects is a 4-element integer vector
                 /// (start_index, end_index, farthest_pt_index, fixpt_depth)
@@ -421,10 +420,13 @@ namespace GestureControlledRemote
                     /// channel[0] = start_point, channel[1] = end_point, channel[2] = fixpt_depth
                     Matrix<int>[] channels = defects.Split();
 
+                    VectorOfPointF fingers = new VectorOfPointF();
+
                     for (int j = 0; j < defects.Rows; ++j)
                     {
-                        CvInvoke.Circle(img, System.Drawing.Point.Round(new System.Drawing.PointF(biggestContour[channels[0][j, 0]].X, biggestContour[channels[0][j, 0]].Y)), 10, new MCvScalar(255, 255, 255), 10);
-                        CvInvoke.Circle(img, System.Drawing.Point.Round(new System.Drawing.PointF(biggestContour[channels[1][j, 0]].X, biggestContour[channels[1][j, 0]].Y)), 10, new MCvScalar(255, 255, 255), 10);
+                        if(j < 5)
+                            CvInvoke.Circle(img, System.Drawing.Point.Round(new System.Drawing.PointF(biggestContour[channels[0][j, 0]].X, biggestContour[channels[0][j, 0]].Y)), 10, new MCvScalar(255, 255, 255), 10);
+                        //CvInvoke.Circle(img, System.Drawing.Point.Round(new System.Drawing.PointF(biggestContour[channels[2][j, 0]].X, biggestContour[channels[2][j, 0]].Y)), 10, new MCvScalar(255, 255, 255), 10);
                     }
                 }
                 
