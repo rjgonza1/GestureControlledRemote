@@ -103,30 +103,30 @@ class knnClassify(classifier):
             prob[i,:] = count / count.sum()    # save (soft) results
         return prob
 
-    #def predict(self, X):
-    #    """Not implemented; uses predictSoft.  Implementation might be more efficient for large C"""
-    #    mtr,ntr = arr(self.Xtr).shape      # get size of training data
-    #    mte,nte = arr(X).shape                 # get size of test data
-    #    assert nte == ntr, 'Training and prediction data must have same number of features'
-    #    
-    #    num_classes = len(self.classes)
-    #    Y_te = np.tile(self.Ytr[0], (mte, 1))      # make Y_te same data type as Ytr
-    #    K = min(self.K, mtr)                           # (can't use more neighbors than training data points)
-    #    for i in range(mte):                           # for each test example...
-    #        # ...compute sum of squared differences...
-    #        dist = np.sum(np.power(self.Xtr - arr(X)[i,:], 2), axis=1)
-    #        # ...find neares neighbors over training data and keep nearest K data points
-    #        sorted_dist = np.sort(dist, axis=0)[0:K]
-    #        indices = np.argsort(dist, axis=0)[0:K]
-    #        wts = np.exp(-self.alpha * sorted_dist)
-    #        count = []
-    #        for c in range(len(self.classes)):
-    #            # total weight of instances of that classes
-    #            count.append(np.sum(wts[self.Ytr[indices] == self.classes[c]]))
-    #        count = np.asarray(count)
-    #        c_max = np.argmax(count)                   # find largest count...
-    #        Y_te[i] = self.classes[c_max]              # ...and save results
-    #    return Y_te
+    def predict(self, X):
+       """Not implemented; uses predictSoft.  Implementation might be more efficient for large C"""
+       mtr,ntr = arr(self.Xtr).shape      # get size of training data
+       mte,nte = arr(X).shape                 # get size of test data
+       assert nte == ntr, 'Training and prediction data must have same number of features'
+
+       num_classes = len(self.classes)
+       Y_te = np.tile(self.Ytr[0], (mte, 1))      # make Y_te same data type as Ytr
+       K = min(self.K, mtr)                           # (can't use more neighbors than training data points)
+       for i in range(mte):                           # for each test example...
+           # ...compute sum of squared differences...
+           dist = np.sum(np.power(self.Xtr - arr(X)[i,:], 2), axis=1)
+           # ...find neares neighbors over training data and keep nearest K data points
+           sorted_dist = np.sort(dist, axis=0)[0:K]
+           indices = np.argsort(dist, axis=0)[0:K]
+           wts = np.exp(-self.alpha * sorted_dist)
+           count = []
+           for c in range(len(self.classes)):
+               # total weight of instances of that classes
+               count.append(np.sum(wts[self.Ytr[indices] == self.classes[c]]))
+           count = np.asarray(count)
+           c_max = np.argmax(count)                   # find largest count...
+           Y_te[i] = self.classes[c_max]              # ...and save results
+       return Y_te
 
 
 ################################################################################
