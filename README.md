@@ -10,3 +10,6 @@ Our general idea is to gather skeleton data points from the Kinect (roughly six 
 
 ## Included Open Source Projects
 DTWGestureRecognition is an open source project that is used here as a template for collecting skeleton data points from the Kinect. We will be modifying this to monitor the hand rather than the entire body
+
+Link to DTW Project Site:
+https://archive.codeplex.com/?p=kinectdtw
