@@ -1,11 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27130.2024
+VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GestureControlledRemote", "GestureControlledRemote.csproj", "{A61C6603-248E-4970-A5A0-9822B63A117B}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DTWGestureRecognition", "..\DTW\DTWGestureRecognition.csproj", "{614D0F9D-60FC-408A-B161-B4C0A6C00276}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -29,14 +27,6 @@ Global
 		{A61C6603-248E-4970-A5A0-9822B63A117B}.Release|x64.Build.0 = Release|x64
 		{A61C6603-248E-4970-A5A0-9822B63A117B}.Release|x86.ActiveCfg = Release|x86
 		{A61C6603-248E-4970-A5A0-9822B63A117B}.Release|x86.Build.0 = Release|x86
-		{614D0F9D-60FC-408A-B161-B4C0A6C00276}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{614D0F9D-60FC-408A-B161-B4C0A6C00276}.Debug|x64.ActiveCfg = Debug|x86
-		{614D0F9D-60FC-408A-B161-B4C0A6C00276}.Debug|x86.ActiveCfg = Debug|x86
-		{614D0F9D-60FC-408A-B161-B4C0A6C00276}.Debug|x86.Build.0 = Debug|x86
-		{614D0F9D-60FC-408A-B161-B4C0A6C00276}.Release|Any CPU.ActiveCfg = Release|x86
-		{614D0F9D-60FC-408A-B161-B4C0A6C00276}.Release|x64.ActiveCfg = Release|x86
-		{614D0F9D-60FC-408A-B161-B4C0A6C00276}.Release|x86.ActiveCfg = Release|x86
-		{614D0F9D-60FC-408A-B161-B4C0A6C00276}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

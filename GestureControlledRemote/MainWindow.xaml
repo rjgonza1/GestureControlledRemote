@@ -9,7 +9,6 @@
             <Image x:Name="emguImage" Width="370" Height="300" Margin="42,0,0,0" VerticalAlignment="Bottom"/>
         </StackPanel>
 
-        <Button x:Name="capture" Content="Capture" HorizontalAlignment="Left" Height="27" Margin="10,10,0,0" VerticalAlignment="Top" Width="106"/>
         <TextBox FontSize="14" Name="Coords" Margin="0,0,0,0" Focusable="False" BorderThickness="0" Text="" TextAlignment="Right" HorizontalAlignment="Right" VerticalAlignment="Top" Width="400" Height="20" />
         <TextBox FontSize="14" Name="Seq" Margin="0,25,-0.4,0" Focusable="False" BorderThickness="0" Text="" TextAlignment="Right" HorizontalAlignment="Right" VerticalAlignment="Top" Width="400" Height="20" />
         <TextBox FontSize="10" Name="Thumb" Focusable="False"   BorderThickness="0" Text="Thumb"    TextAlignment="Right" HorizontalAlignment="Right" VerticalAlignment="Top" Width="400" Height="20" Margin="0,45,-0.4,0" />
