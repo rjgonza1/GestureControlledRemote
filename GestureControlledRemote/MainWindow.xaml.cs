@@ -120,9 +120,13 @@ namespace GestureControlledRemote
 
         /// Taken from open source KinectDTW project
         /// Called when each depth frame is ready
+        /// Does necessary processing to get our finger points and passes it on to the DTW class
         private void GestureDepthFrameReady(object sender, DepthImageFrameReadyEventArgs e)
         {
-            CalculateAndStorePos(convertToEmgu());
+            Image<Gray, Byte> emguImg = convertToEmgu();
+            CalculateAndStorePos(emguImg);
+            this.emguImage.Source = BitmapSourceConvert.ToBitmapSource(emguImg);
+
             using (DepthImageFrame depthFrame = e.OpenDepthImageFrame())
             {
                 if (depthFrame != null)
@@ -173,8 +177,7 @@ namespace GestureControlledRemote
                         ++colorPixelIndex;
                     }
 
-                    Seq.Text = "seq:" + _dtw.get_seq_count();
-
+                    //Seq.Text = "seq:" + _dtw.get_seq_count();
 
                     /// Pass off to DTW
                     currentBufferFrame.Text = _video.Count.ToString();
@@ -248,7 +251,7 @@ namespace GestureControlledRemote
                     sensor.Start();
 
                     /// Shows depth image
-                    this.depthImage.Source = this.depthBitmap;
+                    //this.depthImage.Source = this.depthBitmap;
                     this.sensor.DepthFrameReady += this.GestureDepthFrameReady;
                 }
                 catch (IOException)
@@ -271,6 +274,29 @@ namespace GestureControlledRemote
         //////////////////////////////////
         /////// Point Calculations ///////
         //////////////////////////////////
+
+        /// Calculate finger position and send them to DTW for recording
+        private void CalculateAndStorePos(Image<Gray, Byte> img)
+        {
+            /// Find all contours on screen
+            VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint();
+            CvInvoke.FindContours(img, contours, null, RetrType.List, ChainApproxMethod.ChainApproxSimple);
+
+            /// Find the biggest contour
+            VectorOfPoint biggestContour = CalculateBiggestContour(img, contours);
+
+            if (biggestContour != null)
+            {
+                /// Calculate midpoint of the biggest contour
+                System.Drawing.Point midPoint = findHandPos(img, biggestContour);
+
+                /// Calculate convexity defects
+                Matrix<int> defects = CalculateConvexityDefects(img, biggestContour, contours);
+
+                /// Extract finger points from defects and send to DTW
+                StorePoints(biggestContour, defects, midPoint);
+            }
+        }
 
         /// Calculate the max contour
         private VectorOfPoint CalculateBiggestContour(Image<Gray, Byte> img, VectorOfVectorOfPoint contours)
@@ -420,30 +446,6 @@ namespace GestureControlledRemote
             return handPos;
         }
 
-        /// Calculate finger position and send them to DTW for recording
-        private void CalculateAndStorePos(Image<Gray, Byte> img)
-        {
-            /// Find all contours on screen
-            VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint();
-            CvInvoke.FindContours(img, contours, null, RetrType.List, ChainApproxMethod.ChainApproxSimple);
-
-            /// Find the biggest contour
-            VectorOfPoint biggestContour = CalculateBiggestContour(img, contours);
-
-            if (biggestContour != null)
-            {
-                /// Calculate midpoint of the biggest contour
-                System.Drawing.Point midPoint = findHandPos(img, biggestContour);
-
-                /// Calculate convexity defects
-                Matrix<int> defects = CalculateConvexityDefects(img, biggestContour, contours);
-                
-                /// Extract finger points from defects and send to DTW
-                StorePoints(biggestContour, defects, midPoint);
-            }
-            this.emguImage.Source = BitmapSourceConvert.ToBitmapSource(img);
-        }
-
 
         //////////////////////////////////
         ////// DTW Window Elements ///////
@@ -461,7 +463,8 @@ namespace GestureControlledRemote
             _capturing = false;
 
             // Update the status display
-            status.Text = "Reading";
+            imageBorder.BorderThickness = new Thickness(0);
+            status.Text = "Done";
         }
 
         /// Starts a countdown timer to enable the player to get in position to record gestures
@@ -506,10 +509,12 @@ namespace GestureControlledRemote
 
             ////_captureCountdownTimer.Dispose();
 
-            status.Text = "Recording gesture" + gestureList.Text;
+            //status.Text = "Recording gesture" + gestureList.Text;
 
             // Clear the _video buffer and start from the beginning
             _video = new ArrayList();
+
+            imageBorder.BorderThickness = new Thickness(10);
         }
 
         /// Stores our gesture to the DTW sequences list
