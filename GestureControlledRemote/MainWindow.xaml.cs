@@ -26,9 +26,6 @@ using System.Runtime.InteropServices;
 
 namespace GestureControlledRemote
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
         KinectSensor sensor;
@@ -37,66 +34,46 @@ namespace GestureControlledRemote
         private WriteableBitmap depthBitmap;
         private DepthImagePixel[] depthPixels;
         private byte[] depthcolorPixels;
-        //private Image<Gray, Byte> handImage;
-        private double threshDepth = 800; // 1000
+        private const double threshDepth = 800;
 
         /// DTW
         private DtwGestureRecognizer _dtw;
-        private int _dimension = 12;
+        private const int _dimension = 12;
 
         /// Video
         private ArrayList _video;
         private const int MinimumFrames = 6;
         private bool _capturing;
-        private const int BufferSize = 60; // 32
-        /// <summary>
+        private const int BufferSize = 60;
+
         /// ArrayList of coordinates which are recorded in sequence to define one gesture
-        /// </summary>
         private DateTime _captureCountdown = DateTime.Now;
-        /// <summary>
+      
         /// ArrayList of coordinates which are recorded in sequence to define one gesture
-        /// </summary>
         private Timer _captureCountdownTimer;
-        /// <summary>
+        
         /// The minumum number of frames in the _video buffer before we attempt to start matching gestures
-        /// </summary>
         private const int CaptureCountdownSeconds = 3;
-        /// <summary>
+ 
         /// Total number of framed that have occurred. Used for calculating frames per second
-        /// </summary>
         private int _totalFrames;
-        /// <summary>
+
         /// The 'last time' DateTime. Used for calculating frames per second
-        /// </summary>
         private DateTime _lastTime = DateTime.MaxValue;
-        /// <summary>
+
         /// How many frames occurred 'last time'. Used for calculating frames per second
-        /// </summary>
         private int _lastFrames;
-        /*
-        /// <summary>
-        /// How many skeleton frames to ignore (_flipFlop)
-        /// 1 = capture every frame, 2 = capture every second frame etc.
-        /// </summary>
-        private const int Ignore = 2;
-        /// <summary>
-        /// Switch used to ignore certain skeleton frames
-        /// </summary>
-        private int _flipFlop;
-        */
 
-
-        /// <summary>
         /// Where we will save our gestures to. The app will append a data/time and .txt to this string
-        /// </summary>
         // private const string GestureSaveFileLocation = @"H:\My Dropbox\Dropbox\Microsoft Kinect SDK Beta\DTWGestureRecognition\DTWGestureRecognition\";
         private const string GestureSaveFileLocation = @"C:\Users\rjgon_000\Desktop\Recorded Gestures\";
-
-        /// <summary>
-        /// Where we will save our gestures to. The app will append a data/time and .txt to this string
-        /// </summary>
         private const string GestureSaveFileNamePrefix = @"RecordedGestures";
         private const string ModelingSaveFileNamePrefix = @"Modeling";
+
+
+        //////////////////////////////////
+        //// Component Initialization ////
+        //////////////////////////////////
 
         public MainWindow()
         {
@@ -136,89 +113,16 @@ namespace GestureControlledRemote
             }
         }
 
-        /// <summary>
-        /// Opens the sent text file and creates a _dtw recorded gesture sequence
-        /// Currently not very flexible and totally intolerant of errors.
-        /// </summary>
-        /// <param name="fileLocation">Full path to the gesture file</param>
-        public void LoadGesturesFromFile(string fileLocation)
-        {
-            int itemCount = 0;
-            string line;
-            string gestureName = String.Empty;
 
-            // TODO I'm defaulting this to 2 here for now as it meets my current need but I need to cater for variable lengths in the future
-            ArrayList frames = new ArrayList();
-            double[] items = new double[_dimension];
-
-            // Read the file and display it line by line.
-            System.IO.StreamReader file = new System.IO.StreamReader(fileLocation);
-            while ((line = file.ReadLine()) != null)
-            {
-                if (line.StartsWith("@"))
-                {
-                    gestureName = line;
-                    continue;
-                }
-
-                if (line.StartsWith("~"))
-                {
-                    frames.Add(items);
-                    itemCount = 0;
-                    items = new double[_dimension];
-                    continue;
-                }
-
-                if (!line.StartsWith("----"))
-                {
-                    items[itemCount] = Double.Parse(line);
-                }
-
-                itemCount++;
-
-                if (line.StartsWith("----"))
-                {
-                    _dtw.AddOrUpdate(frames, gestureName);
-                    frames = new ArrayList();
-                    gestureName = String.Empty;
-                    itemCount = 0;
-                }
-            }
-
-            file.Close();
-        }
-
-        /// Capture and show Emgu image
-        private void captureImage(object sender, RoutedEventArgs e)
-        {
-            Emgu.CV.UI.ImageViewer.Show(convertToEmgu());
-        }
-
-        /// Convert to Emgu
-        private Image<Gray, Byte> convertToEmgu()
-        {
-            BitmapEncoder encoder = new BmpBitmapEncoder();
-            encoder.Frames.Add(BitmapFrame.Create(this.depthBitmap));
-            MemoryStream ms = new MemoryStream();
-
-            encoder.Save(ms);
-            Bitmap b = new Bitmap(ms);
-
-            Image<Gray, Byte> img = new Image<Gray, Byte>(b);
-
-            return img;
-        }
-
+        //////////////////////////////////
+        ////// Main Window Elements //////
+        //////////////////////////////////
 
         /// Taken from open source KinectDTW project
-        /// <summary>
         /// Called when each depth frame is ready
-        /// </summary>
-        /// <param name="sender">The sender object</param>
-        /// <param name="e">Depth Image Frame Ready Event Args</param>
         private void GestureDepthFrameReady(object sender, DepthImageFrameReadyEventArgs e)
         {
-            ContourAndHull(convertToEmgu());
+            CalculateAndStorePos(convertToEmgu());
             using (DepthImageFrame depthFrame = e.OpenDepthImageFrame())
             {
                 if (depthFrame != null)
@@ -305,7 +209,7 @@ namespace GestureControlledRemote
                             }
                         }
                     }
-                    
+
                     // Update the debug window with Sequences information
                     //dtwTextOutput.Text = _dtw.RetrieveText();
 
@@ -330,43 +234,47 @@ namespace GestureControlledRemote
             }
         }
 
-        private double[] findHandPos(VectorOfPoint vp)
+        /// Runs when window is loaded
+        private void WindowLoaded(object sender, RoutedEventArgs e)
         {
-            VectorOfPoint contours = vp;
-            // Get the avg of x values and y values of hand position
-            int sumX = 0;
-            int sumY = 0;
-            int totalPixels = 0;
-            double avgX = 0;
-            double avgY = 0;
+            /// Initialize sensors and streams
+            InitKinect();
 
-            for (int i = 0; i < contours.Size; ++i)
+            /// Start the stream
+            if (this.sensor != null)
             {
-                sumX += contours[i].X;
-                sumY += contours[i].Y;
-                ++totalPixels;
+                try
+                {
+                    sensor.Start();
+
+                    /// Shows depth image
+                    this.depthImage.Source = this.depthBitmap;
+                    this.sensor.DepthFrameReady += this.GestureDepthFrameReady;
+                }
+                catch (IOException)
+                {
+                    sensor = null;
+                }
             }
-
-            if (totalPixels > 0)
-            {
-                avgX = (double)(sumX / totalPixels);
-                avgY = (double)(sumY / totalPixels);
-            }
-
-            double[] tmp = new double[2];
-            tmp[0] = avgX;
-            tmp[1] = avgY;
-
-            //_video.Add(tmp);
-
-            return tmp;
         }
 
-        private VectorOfPoint ContourAndHull(Image<Gray, Byte> img)
+        /// Cleanup 
+        private void WindowClosed(object sender, EventArgs e)
         {
+            if (null != this.sensor)
+                this.sensor.Stop();
 
-            /// Find the max contour
-            VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint();
+            Environment.Exit(0);
+        }
+
+
+        //////////////////////////////////
+        /////// Point Calculations ///////
+        //////////////////////////////////
+
+        /// Calculate the max contour
+        private VectorOfPoint CalculateBiggestContour(Image<Gray, Byte> img, VectorOfVectorOfPoint contours)
+        {
             VectorOfPoint biggestContour = null;
 
             CvInvoke.FindContours(img, contours, null, RetrType.List, ChainApproxMethod.ChainApproxSimple);
@@ -386,166 +294,162 @@ namespace GestureControlledRemote
                 }
             }
 
-            /// Calculate convex hull
-            VectorOfPoint currentContour = new VectorOfPoint();
-            VectorOfPoint hullPoints = new VectorOfPoint();
-            VectorOfInt hullIndices = new VectorOfInt();
-            double avgX = 0.0;
-            double avgY = 0.0;
-            if (biggestContour != null)
-            {
-                CvInvoke.ApproxPolyDP(biggestContour, currentContour, CvInvoke.ArcLength(biggestContour, true) * .005, true);
-                biggestContour = currentContour;
-
-                /// Calculate midpoint of the biggest contour
-                avgX = findHandPos(biggestContour)[0];
-                avgY = findHandPos(biggestContour)[1];
-                int x = (int)avgX;
-                int y = (int)avgY;
-
-                CvInvoke.Circle(img, new System.Drawing.Point(x, y), 10, new MCvScalar(255, 255, 255), 10);
-
-                CvInvoke.ConvexHull(biggestContour, hullIndices, false, false);
-                CvInvoke.ConvexHull(biggestContour, hullPoints, false);
-
-                /// Draw contours and convex hull
-                CvInvoke.DrawContours(img, contours, largestContourIndex, new MCvScalar(255, 0, 0), 5);
-                CvInvoke.Polylines(img, hullPoints.ToArray(), true, new MCvScalar(255, 255, 255), 10);
-
-                /// Calcualate convexity defects
-                /// Defects is a 4-element integer vector
-                /// (start_index, end_index, farthest_pt_index, fixpt_depth)
-                /// stored in a matrix where each row is a defect
-                Mat mat = new Mat();
-                CvInvoke.ConvexityDefects(biggestContour, hullIndices, mat);
-                if(mat.Rows > 0)
-                {
-                    Matrix<int> defects = new Matrix<int>(mat.Rows, mat.Cols, mat.NumberOfChannels);
-                    mat.CopyTo(defects);
-                    /// channel[0] = start_point, channel[1] = end_point, channel[2] = fixpt_depth
-                    Matrix<int>[] channels = defects.Split();
-
-                    VectorOfPointF fingers = new VectorOfPointF();
-
-                    for (int j = 0; j < defects.Rows; ++j)
-                    {
-                        if(j < 5)
-                            CvInvoke.Circle(img, System.Drawing.Point.Round(new System.Drawing.PointF(biggestContour[channels[0][j, 0]].X, biggestContour[channels[0][j, 0]].Y)), 10, new MCvScalar(255, 255, 255), 10);
-                    }
-
-                    /// Store indices that are finger points and palm
-                    double[] tmp = new double[_dimension];
-                    Array.Clear(tmp, 0, _dimension);
-                    if (defects.Rows > 0)
-                    {
-                        tmp[0] = biggestContour[channels[0][0, 0]].X;
-                        tmp[1] = biggestContour[channels[0][0, 0]].Y;
-                    }
-                    if (defects.Rows > 1)
-                    {
-                        tmp[2] = biggestContour[channels[0][1, 0]].X;
-                        tmp[3] = biggestContour[channels[0][1, 0]].Y;
-                    }
-                    if (defects.Rows > 2)
-                    {
-                        tmp[4] = biggestContour[channels[0][2, 0]].X;
-                        tmp[5] = biggestContour[channels[0][2, 0]].Y;
-                    }
-                    if (defects.Rows > 3)
-                    {
-                        tmp[6] = biggestContour[channels[0][3, 0]].X;
-                        tmp[7] = biggestContour[channels[0][3, 0]].Y;
-                    }
-                    if (defects.Rows > 4)
-                    {
-                        tmp[8] = biggestContour[channels[0][4, 0]].X;
-                        tmp[9] = biggestContour[channels[0][4, 0]].Y;
-                    }
-
-                    tmp[10] = avgX;
-                    tmp[11] = avgY;
-
-                    _video.Add(tmp);
-                }
-            }
-
-            this.emguImage.Source = BitmapSourceConvert.ToBitmapSource(img);
+            /// For debugging and training purposes
+            /// Draws biggestContour
+            //CvInvoke.DrawContours(img, contours, largestContourIndex, new MCvScalar(255, 0, 0), 5);
 
             return biggestContour;
         }
 
-        public static class BitmapSourceConvert
+        /// Calculate convex hull and convexity defects for accurate finger calculation
+        private Matrix<int> CalculateConvexityDefects(Image<Gray, Byte> img, VectorOfPoint biggestContour, VectorOfVectorOfPoint contours)
         {
-            [DllImport("gdi32")]
-            private static extern int DeleteObject(IntPtr o);
+            VectorOfPoint currentContour = new VectorOfPoint();
+            VectorOfInt hullIndices = new VectorOfInt();
 
-            public static BitmapSource ToBitmapSource(IImage image)
+            CvInvoke.ApproxPolyDP(biggestContour, currentContour, CvInvoke.ArcLength(biggestContour, true) * .005, true);
+            biggestContour = currentContour;
+            CvInvoke.ConvexHull(biggestContour, hullIndices, false, false);
+
+            /// Calcualate convexity defects
+            /// Defects is a 4-element integer vector
+            /// (start_index, end_index, farthest_pt_index, fixpt_depth)
+            /// stored in a matrix where each row is a defect
+            Matrix<int> defects = null;
+            Mat mat = new Mat();
+
+            CvInvoke.ConvexityDefects(biggestContour, hullIndices, mat);
+            if (mat.Rows > 0)
             {
-                using (System.Drawing.Bitmap source = image.Bitmap)
-                {
-                    IntPtr ptr = source.GetHbitmap();
-
-                    BitmapSource bs = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
-                        ptr,
-                        IntPtr.Zero,
-                        Int32Rect.Empty,
-                        System.Windows.Media.Imaging.BitmapSizeOptions.FromEmptyOptions());
-
-                    DeleteObject(ptr);
-                    return bs;
-                }
+                defects = new Matrix<int>(mat.Rows, mat.Cols, mat.NumberOfChannels);
+                mat.CopyTo(defects);
             }
-        }
 
+            /// For debugging and training purposes
+            /// Draws convex hull of biggest contour
+            VectorOfPoint hullPoints = new VectorOfPoint();
+            CvInvoke.ConvexHull(biggestContour, hullPoints, false);
+            CvInvoke.Polylines(img, hullPoints.ToArray(), true, new MCvScalar(255, 255, 255), 10);
 
-        /// Runs when window is loaded
-        private void WindowLoaded(object sender, RoutedEventArgs e)
-        {
-            /// Initialize sensors and streams
-            InitKinect();
-
-            /// Start the stream
-            if (this.sensor != null)
+            /// Draws finger points using convexity defects
+            Matrix<int>[] channels = defects.Split();
+            /// channel[0] = start_point, channel[1] = end_point, channel[2] = fixpt_depth
+            
+            for (int j = 0; j < defects.Rows; ++j)
             {
-                try
-                {
-                    sensor.Start();
-
-                    /// Shows depth image
-                    this.depthImage.Source = this.depthBitmap;
-                    this.sensor.DepthFrameReady += this.GestureDepthFrameReady;
-
-                    /// Shows emgu depth image
-                    //this.sensor.DepthFrameReady += this.EmguDepthFrameReady;
-
-                    /// Capture clicks
-                    this.capture.Click += captureImage;
-                }
-                catch (IOException)
-                {
-                    sensor = null;
-                }
+                if (j < 5)
+                    CvInvoke.Circle(img, System.Drawing.Point.Round(new System.Drawing.PointF(biggestContour[channels[0][j, 0]].X, biggestContour[channels[0][j, 0]].Y)), 10, new MCvScalar(255, 255, 255), 10);
             }
-        }
 
-        // Cleanup 
-        private void WindowClosed(object sender, EventArgs e)
+            return defects;
+        }
+        
+        /// Store indices that are finger points and palm
+        private void StorePoints(VectorOfPoint biggestContour, Matrix<int> defects, System.Drawing.Point midPoint)
         {
-            if (null != this.sensor)
-                this.sensor.Stop();
+            Matrix<int>[] channels = defects.Split();
+            /// channel[0] = start_point, channel[1] = end_point, channel[2] = fixpt_depth
+            
+            double[] points = new double[_dimension];
+            Array.Clear(points, 0, _dimension);
 
-            Environment.Exit(0);
+            if (defects.Rows > 0)
+            {
+                points[0] = biggestContour[channels[0][0, 0]].X;
+                points[1] = biggestContour[channels[0][0, 0]].Y;
+            }
+            if (defects.Rows > 1)
+            {
+                points[2] = biggestContour[channels[0][1, 0]].X;
+                points[3] = biggestContour[channels[0][1, 0]].Y;
+            }
+            if (defects.Rows > 2)
+            {
+                points[4] = biggestContour[channels[0][2, 0]].X;
+                points[5] = biggestContour[channels[0][2, 0]].Y;
+            }
+            if (defects.Rows > 3)
+            {
+                points[6] = biggestContour[channels[0][3, 0]].X;
+                points[7] = biggestContour[channels[0][3, 0]].Y;
+            }
+            if (defects.Rows > 4)
+            {
+                points[8] = biggestContour[channels[0][4, 0]].X;
+                points[9] = biggestContour[channels[0][4, 0]].Y;
+            }
+
+            points[10] = midPoint.X;
+            points[11] = midPoint.Y;
+
+            _video.Add(points);
+        }
+
+        /// Find average x and y value of hand
+        private System.Drawing.Point findHandPos(Image<Gray, Byte> img, VectorOfPoint biggestContour)
+        {
+            // Get the avg of x values and y values of hand position
+            int sumX = 0;
+            int sumY = 0;
+            int totalPixels = 0;
+            double avgX = 0;
+            double avgY = 0;
+
+            for (int i = 0; i < biggestContour.Size; ++i)
+            {
+                sumX += biggestContour[i].X;
+                sumY += biggestContour[i].Y;
+                ++totalPixels;
+            }
+
+            if (totalPixels > 0)
+            {
+                avgX = (double)(sumX / totalPixels);
+                avgY = (double)(sumY / totalPixels);
+            }
+
+            System.Drawing.Point handPos = new System.Drawing.Point((int) avgX, (int) avgY);
+            //double[] handPos = new double[2];
+            //handPos[0] = avgX;
+            //handPos[1] = avgY;
+
+            /// For debugging and training purposes
+            /// Draw mid point
+            CvInvoke.Circle(img, handPos, 10, new MCvScalar(255, 255, 255), 10);
+
+            return handPos;
+        }
+
+        /// Calculate finger position and send them to DTW for recording
+        private void CalculateAndStorePos(Image<Gray, Byte> img)
+        {
+            /// Find all contours on screen
+            VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint();
+            CvInvoke.FindContours(img, contours, null, RetrType.List, ChainApproxMethod.ChainApproxSimple);
+
+            /// Find the biggest contour
+            VectorOfPoint biggestContour = CalculateBiggestContour(img, contours);
+
+            if (biggestContour != null)
+            {
+                /// Calculate midpoint of the biggest contour
+                System.Drawing.Point midPoint = findHandPos(img, biggestContour);
+
+                /// Calculate convexity defects
+                Matrix<int> defects = CalculateConvexityDefects(img, biggestContour, contours);
+                
+                /// Extract finger points from defects and send to DTW
+                StorePoints(biggestContour, defects, midPoint);
+            }
+            this.emguImage.Source = BitmapSourceConvert.ToBitmapSource(img);
         }
 
 
-        
-        /// DTW Window Elements
-        
-        /// <summary>
+        //////////////////////////////////
+        ////// DTW Window Elements ///////
+        //////////////////////////////////
+
         /// Read mode. Sets our control variables and button enabled states
-        /// </summary>
-        /// <param name="sender">The sender object</param>
-        /// <param name="e">Routed Event Args</param>
         private void DtwReadClick(object sender, RoutedEventArgs e)
         {
             // Set the buttons enabled state
@@ -560,11 +464,7 @@ namespace GestureControlledRemote
             status.Text = "Reading";
         }
 
-        /// <summary>
         /// Starts a countdown timer to enable the player to get in position to record gestures
-        /// </summary>
-        /// <param name="sender">The sender object</param>
-        /// <param name="e">Routed Event Args</param>
         private void DtwCaptureClick(object sender, RoutedEventArgs e)
         {
             _captureCountdown = DateTime.Now.AddSeconds(CaptureCountdownSeconds);
@@ -575,11 +475,7 @@ namespace GestureControlledRemote
             _captureCountdownTimer.Tick += CaptureCountdown;
         }
 
-        /// <summary>
         /// The method fired by the countdown timer. Either updates the countdown or fires the StartCapture method if the timer expires
-        /// </summary>
-        /// <param name="sender">The sender object</param>
-        /// <param name="e">Event Args</param>
         private void CaptureCountdown(object sender, EventArgs e)
         {
             if (sender == _captureCountdownTimer)
@@ -597,9 +493,7 @@ namespace GestureControlledRemote
             }
         }
 
-        /// <summary>
         /// Capture mode. Sets our control variables and button enabled states
-        /// </summary>
         private void StartCapture()
         {
             // Set the buttons enabled state
@@ -618,11 +512,7 @@ namespace GestureControlledRemote
             _video = new ArrayList();
         }
 
-        /// <summary>
         /// Stores our gesture to the DTW sequences list
-        /// </summary>
-        /// <param name="sender">The sender object</param>
-        /// <param name="e">Routed Event Args</param>
         private void DtwStoreClick(object sender, RoutedEventArgs e)
         {
             // Set the buttons enabled state
@@ -646,11 +536,7 @@ namespace GestureControlledRemote
             DtwReadClick(null, null);
         }
 
-        /// <summary>
         /// Stores our gesture to the DTW sequences list
-        /// </summary>
-        /// <param name="sender">The sender object</param>
-        /// <param name="e">Routed Event Args</param>
         private void DtwSaveToFile(object sender, RoutedEventArgs e)
         {
             string fileName = GestureSaveFileNamePrefix + DateTime.Now.ToString("yyyy-MM-dd_HH-mm") + ".txt";
@@ -662,11 +548,7 @@ namespace GestureControlledRemote
             System.IO.File.AppendAllText(GestureSaveFileLocation + fileName_modeling, _dtw.RetrieveText1());
         }
 
-        /// <summary>
         /// Loads the user's selected gesture file
-        /// </summary>
-        /// <param name="sender">The sender object</param>
-        /// <param name="e">Routed Event Args</param>
         private void DtwLoadFile(object sender, RoutedEventArgs e)
         {
             // Create OpenFileDialog
@@ -691,14 +573,103 @@ namespace GestureControlledRemote
             }
         }
 
-        /// <summary>
         /// Stores our gesture to the DTW sequences list
-        /// </summary>
-        /// <param name="sender">The sender object</param>
-        /// <param name="e">Routed Event Args</param>
         private void DtwShowGestureText(object sender, RoutedEventArgs e)
         {
             dtwTextOutput.Text = _dtw.RetrieveText();
+        }
+
+        /// Opens the sent text file and creates a _dtw recorded gesture sequence
+        /// Currently not very flexible and totally intolerant of errors.
+        public void LoadGesturesFromFile(string fileLocation)
+        {
+            int itemCount = 0;
+            string line;
+            string gestureName = String.Empty;
+
+            // TODO I'm defaulting this to 2 here for now as it meets my current need but I need to cater for variable lengths in the future
+            ArrayList frames = new ArrayList();
+            double[] items = new double[_dimension];
+
+            // Read the file and display it line by line.
+            System.IO.StreamReader file = new System.IO.StreamReader(fileLocation);
+            while ((line = file.ReadLine()) != null)
+            {
+                if (line.StartsWith("@"))
+                {
+                    gestureName = line;
+                    continue;
+                }
+
+                if (line.StartsWith("~"))
+                {
+                    frames.Add(items);
+                    itemCount = 0;
+                    items = new double[_dimension];
+                    continue;
+                }
+
+                if (!line.StartsWith("----"))
+                {
+                    items[itemCount] = Double.Parse(line);
+                }
+
+                itemCount++;
+
+                if (line.StartsWith("----"))
+                {
+                    _dtw.AddOrUpdate(frames, gestureName);
+                    frames = new ArrayList();
+                    gestureName = String.Empty;
+                    itemCount = 0;
+                }
+            }
+
+            file.Close();
+        }
+
+
+        //////////////////////////////////
+        //////// Helper Functions ////////
+        //////////////////////////////////
+
+        /// Convert to Emgu
+        private Image<Gray, Byte> convertToEmgu()
+        {
+            BitmapEncoder encoder = new BmpBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(this.depthBitmap));
+            MemoryStream ms = new MemoryStream();
+
+            encoder.Save(ms);
+            Bitmap b = new Bitmap(ms);
+
+            Image<Gray, Byte> img = new Image<Gray, Byte>(b);
+
+            return img;
+        }
+
+        /// Convert Emug Image back to Bitmap for display
+        public static class BitmapSourceConvert
+        {
+            [DllImport("gdi32")]
+            private static extern int DeleteObject(IntPtr o);
+
+            public static BitmapSource ToBitmapSource(IImage image)
+            {
+                using (System.Drawing.Bitmap source = image.Bitmap)
+                {
+                    IntPtr ptr = source.GetHbitmap();
+
+                    BitmapSource bs = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
+                        ptr,
+                        IntPtr.Zero,
+                        Int32Rect.Empty,
+                        System.Windows.Media.Imaging.BitmapSizeOptions.FromEmptyOptions());
+
+                    DeleteObject(ptr);
+                    return bs;
+                }
+            }
         }
     }
 }
