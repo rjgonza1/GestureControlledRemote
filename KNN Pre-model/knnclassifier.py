@@ -3,36 +3,26 @@ import matplotlib.pyplot as plt
 import mltools as ml
 
 # Parse data
-gestures = np.genfromtxt("data/Modeling.txt", delimiter=None)
-input = np.genfromtxt("data/Input.txt", delimiter=None)
+gestures = np.genfromtxt("data/GestureData.txt", delimiter=None)
+# input = np.genfromtxt("data/Input.txt", delimiter=None)
+
 Y = gestures[:, -1]
 X = gestures[:, 0:-1]
 
-# for i in input:
-#     print(i)
+errTrain = []
+errVal = []
+
 # Randomize data and split into 75/25 train/validation
 np.random.seed(0)
-
 X, Y = ml.shuffleData(X, Y)
 Xtr, Xva, Ytr, Yva = ml.splitData(X, Y, .75)
 
-### Scatter plot
-# plt.figure(1)
-# plt.title("Feature pair (1,3):")
-# plt.plot(X[:,0], 'k.', X[:,2], 'b.')
-# plt.show()
-#
-# plt.figure(2)
-# plt.title("Feature pair (1,3):")
-# plt.plot(X[:,0], 'k.', X[:,2], 'g.')
-#
-# plt.figure(3)
-# plt.title("Feature pair (1,4):")
-# plt.plot(X[:,0], 'k.', X[:,1], 'r.')
-
-
 ### Knn Neighbors
-K = [1, 2, 5, 10, 50]
+# For comparing two classes
+# K = [1, 2, 5, 10, 50]
+
+# For the entire training set
+K = [7, 14, 21, 28, 35]
 
 # for i, k in enumerate(K):
 #     plt.figure(i)
@@ -42,21 +32,20 @@ K = [1, 2, 5, 10, 50]
 #     ml.plotClassify2D(knn, Xtr, Ytr)  # Visualize data set and decision regions
 #     plt.show()
 
-knn = ml.knn.knnClassify()
-knn.train(Xtr, Ytr, 5)
-print(knn.predict(input))
+#Uses same neighbor array K
 
-errTrain = []
-errVal = []
-#
-# #Uses same neighbor array K
-#
-# for j, k in enumerate(K):
-#     learner = ml.knn.knnClassify(Xtr, Ytr, k)
-#     errVal.append(learner.err(Xva, Yva))
-#     errTrain.append(learner.err(Xtr, Ytr))
-#
-# plt.figure(1)
-# plt.title("All Features Error Rate")
-# plt.semilogx(errTrain, 'r', errVal, 'g')
-# plt.show()
+for j, k in enumerate(K):
+    learner = ml.knn.knnClassify(Xtr, Ytr, k)
+    errVal.append(learner.err(Xva, Yva))
+    errTrain.append(learner.err(Xtr, Ytr))
+
+plt.figure(1)
+plt.title("All Features Error Rate")
+plt.semilogx(errTrain, 'r', errVal, 'g')
+plt.show()
+
+
+# Testing prediction wiht k=5
+# knn = ml.knn.knnClassify()
+# knn.train(Xtr, Ytr, 5)
+# print(knn.predict(input))

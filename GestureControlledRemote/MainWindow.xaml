@@ -25,6 +25,7 @@
             <Button Name="dtwSaveToFile" Content="Save to file" IsEnabled="True" Click="DtwSaveToFile" Width="200" Margin="0,0,0,0" HorizontalAlignment="Left" />
             <Button x:Name="dtwRead" Content="Read" Click="DtwReadClick" Width="200" IsEnabled="False"  Margin="0,0,0,0" HorizontalAlignment="Left" />
             <Button x:Name="dtwShowGestureTest" Content="Show Gesture Text" IsEnabled="True" Click="DtwShowGestureText" Margin="0,0,0,0" HorizontalAlignment="Left" Width="200" />
+            <Button x:Name="resetCounter" Content="Reset Counter" IsEnabled="True" Click="ResetCounter" Margin="0,0,0,0" HorizontalAlignment="Left" Width="200" />
 
         </StackPanel>
         <!--<TextBox Grid.Column="1" Grid.Row="5" FontSize="11" Name="Tabs" Margin="0,40,0,0" Focusable="True" TextAlignment="Left" HorizontalAlignment="Left" VerticalAlignment="Top" Width="300" Height="230" TextWrapping="WrapWithOverflow" RenderTransformOrigin="0.696,0.653" Text=""/>-->
@@ -40,8 +41,9 @@
             <TextBox FontSize="14" Name="currentBufferFrame" Margin="0,0,0,0" Focusable="False" BorderThickness="0" Text="" TextAlignment="Left" HorizontalAlignment="Left" VerticalAlignment="Top" Width="400" Height="20" />
             <TextBox FontSize="14" Name="frameRate" Margin="0,0,0,0" Focusable="False" BorderThickness="0" Text="fps:" TextAlignment="Left" HorizontalAlignment="Left" VerticalAlignment="Top" Width="400" Height="20" />
         </StackPanel>
-        <TextBox Grid.Column="0" FontSize="11" Name="dtwTextOutput" Margin="0,336,1072,165" Focusable="True" BorderThickness="0" Text="" TextAlignment="Left" HorizontalAlignment="Right" VerticalAlignment="Center" Width="200" Height="142" VerticalScrollBarVisibility="Auto" IsReadOnly="True" RenderTransformOrigin="-0.105,0.553" />
+        <TextBox Grid.Column="0" FontSize="11" Name="dtwTextOutput" Margin="0,423,873,40" Focusable="True" BorderThickness="0" Text="" TextAlignment="Left" HorizontalAlignment="Right" VerticalAlignment="Center" Width="200" Height="50" VerticalScrollBarVisibility="Auto" IsReadOnly="True" RenderTransformOrigin="-0.105,0.553" />
         <TextBox FontSize="30" Name="status" Margin="0,244,0,0" Focusable="False" BorderThickness="0" Text="" TextAlignment="Center" HorizontalAlignment="Left" VerticalAlignment="Top" Width="400" Height="87" />
+        <TextBox FontSize="15" Name="counter" Margin="0,336,0,0" Focusable="False" BorderThickness="0" Text="Recorded Gestures: " TextAlignment="Left" HorizontalAlignment="Left" VerticalAlignment="Top" Width="400" Height="87" />
     </Grid>
 
 </Window>

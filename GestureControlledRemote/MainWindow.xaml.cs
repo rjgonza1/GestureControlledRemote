@@ -42,9 +42,13 @@ namespace GestureControlledRemote
 
         /// Video
         private ArrayList _video;
-        private const int MinimumFrames = 6;
         private bool _capturing;
+        private const int MinimumFrames = 6;
         private const int BufferSize = 60;
+
+        /// QoL counter for tracking how many gestures were saved for training
+        private int gestureCount = 0;
+
 
         /// ArrayList of coordinates which are recorded in sequence to define one gesture
         private DateTime _captureCountdown = DateTime.Now;
@@ -293,8 +297,9 @@ namespace GestureControlledRemote
                 /// Calculate convexity defects
                 Matrix<int> defects = CalculateConvexityDefects(img, biggestContour, contours);
 
-                /// Extract finger points from defects and send to DTW
-                StorePoints(biggestContour, defects, midPoint);
+                if(defects != null)
+                    /// Extract finger points from defects and send to DTW
+                    StorePoints(biggestContour, defects, midPoint);
             }
         }
 
@@ -349,6 +354,17 @@ namespace GestureControlledRemote
             {
                 defects = new Matrix<int>(mat.Rows, mat.Cols, mat.NumberOfChannels);
                 mat.CopyTo(defects);
+
+                /// For debugging and training purposes
+                /// Draws finger points using convexity defects
+                Matrix<int>[] channels = defects.Split();
+                /// channel[0] = start_point, channel[1] = end_point, channel[2] = fixpt_depth
+
+                for (int j = 0; j < defects.Rows; ++j)
+                {
+                    if (j < 5)
+                        CvInvoke.Circle(img, System.Drawing.Point.Round(new System.Drawing.PointF(biggestContour[channels[0][j, 0]].X, biggestContour[channels[0][j, 0]].Y)), 10, new MCvScalar(255, 255, 255), 10);
+                }
             }
 
             /// For debugging and training purposes
@@ -356,16 +372,6 @@ namespace GestureControlledRemote
             VectorOfPoint hullPoints = new VectorOfPoint();
             CvInvoke.ConvexHull(biggestContour, hullPoints, false);
             CvInvoke.Polylines(img, hullPoints.ToArray(), true, new MCvScalar(255, 255, 255), 10);
-
-            /// Draws finger points using convexity defects
-            Matrix<int>[] channels = defects.Split();
-            /// channel[0] = start_point, channel[1] = end_point, channel[2] = fixpt_depth
-            
-            for (int j = 0; j < defects.Rows; ++j)
-            {
-                if (j < 5)
-                    CvInvoke.Circle(img, System.Drawing.Point.Round(new System.Drawing.PointF(biggestContour[channels[0][j, 0]].X, biggestContour[channels[0][j, 0]].Y)), 10, new MCvScalar(255, 255, 255), 10);
-            }
 
             return defects;
         }
@@ -544,6 +550,8 @@ namespace GestureControlledRemote
         /// Stores our gesture to the DTW sequences list
         private void DtwSaveToFile(object sender, RoutedEventArgs e)
         {
+            counter.Text = "Recorded Gestures: " + (++gestureCount).ToString();
+
             string fileName = GestureSaveFileNamePrefix + DateTime.Now.ToString("yyyy-MM-dd_HH-mm") + ".txt";
             System.IO.File.WriteAllText(GestureSaveFileLocation + fileName, _dtw.RetrieveText());
             status.Text = "Saved to " + fileName;
@@ -631,6 +639,12 @@ namespace GestureControlledRemote
             }
 
             file.Close();
+        }
+
+        private void ResetCounter(object sender, RoutedEventArgs e)
+        {
+            gestureCount = 0;
+            counter.Text = "Recorded Gestures: " + gestureCount.ToString();
         }
 
 
