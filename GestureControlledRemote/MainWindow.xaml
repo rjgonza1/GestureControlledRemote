@@ -23,7 +23,7 @@
             <Button Name="dtwStore" Content="Store" IsEnabled="False" Click="DtwStoreClick" Width="200" Margin="0,0,0,0" HorizontalAlignment="Left" />
             <Button Name="dtwLoadFile" Content="Load gesture file" IsEnabled="True" Click="DtwLoadFile" Width="200" Margin="0,0,0,0" HorizontalAlignment="Left" />
             <Button Name="dtwSaveToFile" Content="Save to file" IsEnabled="True" Click="DtwSaveToFile" Width="200" Margin="0,0,0,0" HorizontalAlignment="Left" />
-            <Button x:Name="dtwRead" Content="Read" Click="DtwReadClick" Width="200" IsEnabled="False"  Margin="0,0,0,0" HorizontalAlignment="Left" />
+            <Button x:Name="dtwRead" Content="Read" Click="DtwReadClick" Width="200" IsEnabled="True"  Margin="0,0,0,0" HorizontalAlignment="Left" />
             <Button x:Name="dtwShowGestureTest" Content="Show Gesture Text" IsEnabled="True" Click="DtwShowGestureText" Margin="0,0,0,0" HorizontalAlignment="Left" Width="200" />
             <Button x:Name="resetCounter" Content="Reset Counter" IsEnabled="True" Click="ResetCounter" Margin="0,0,0,0" HorizontalAlignment="Left" Width="200" />
 
