@@ -31,6 +31,10 @@ namespace GestureControlledRemote
     public partial class MainWindow : Window
     {
         KinectSensor sensor;
+        /// KNN
+        private const string TDFile = @"C:\Users\joshu\Desktop\Training Data\traindata.txt";
+        private EmguCVKNearestNeighbors _knn;
+        private Matrix<float> _videom;
 
         /// Depth Pixels and Bitmap 
         private WriteableBitmap depthBitmap;
@@ -83,6 +87,8 @@ namespace GestureControlledRemote
 
         public MainWindow()
         {
+            _knn = new EmguCVKNearestNeighbors();
+            _knn.ReadTrainingData(TDFile);
             InitializeComponent();
         }
 
@@ -192,8 +198,14 @@ namespace GestureControlledRemote
                     if (_video.Count > MinimumFrames && _capturing == false)
                     {
                         ////Debug.WriteLine("Reading and video.Count=" + video.Count);
-                        string s = _dtw.Recognize(_video);
+                        //_dtw.Recognize(_video);
+
+                        _videom = new Matrix<float>(1, _dimension);
+                        for (int i = 0; i < _video.Count; i++)
+                            _videom[0, i] = (float)_video[i];
+                        String s = _knn.Predict(_videom).ToString();
                         results.Text = "Recognised as: " + s;
+
                         if (!s.Contains("__UNKNOWN"))
                         {
                             // There was no match so reset the buffer
