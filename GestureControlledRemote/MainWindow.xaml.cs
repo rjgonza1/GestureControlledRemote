@@ -26,6 +26,8 @@ using System.Runtime.InteropServices;
 
 namespace GestureControlledRemote
 {
+    public enum Gestures { ReadySignal = 0, TogglePower, ChannelUp, ChannelDown, VolumeUp, VolumeDown, None };
+
     public partial class MainWindow : Window
     {
         KinectSensor sensor;
@@ -270,6 +272,8 @@ namespace GestureControlledRemote
         {
             if (null != this.sensor)
                 this.sensor.Stop();
+
+            SerialSender.SerialSenderShutdown();
 
             Environment.Exit(0);
         }
