@@ -12,7 +12,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
-using System.Windows.Shapes;
+using System.Windows.Shapes; 
 using Microsoft.Kinect;
 using Emgu.CV;
 using Emgu.CV.Util;
@@ -35,8 +35,7 @@ namespace GestureControlledRemote
         /// KNN
         //private const string TDFile = @"C:\Users\joshu\Desktop\Training Data\traindata.txt";
         private const string TDFile = @"GestureData.txt";
-        private EmguCVKNearestNeighbors _knn;
-        private Matrix<float> _videom;
+        private Matrix<float> sample;
 
         /// Depth Pixels and Bitmap 
         private WriteableBitmap depthBitmap;
@@ -92,9 +91,6 @@ namespace GestureControlledRemote
         public MainWindow()
         {
             InitializeComponent();
-
-            /// Create knn and train data
-            _knn = new EmguCVKNearestNeighbors();
         }
 
         private void InitKinect()
@@ -140,6 +136,7 @@ namespace GestureControlledRemote
         /// Does necessary processing to get our finger points and passes it on to the DTW class
         private void GestureDepthFrameReady(object sender, DepthImageFrameReadyEventArgs e)
         {
+            // Calculating and storing finger and palm positions
             Image<Gray, Byte> emguImg = convertToEmgu();
             CalculateAndStorePos(emguImg);
             this.emguImage.Source = BitmapSourceConvert.ToBitmapSource(emguImg);
@@ -194,28 +191,22 @@ namespace GestureControlledRemote
                         ++colorPixelIndex;
                     }
 
-                    //Seq.Text = "seq:" + _dtw.get_seq_count();
-
                     /// Pass off to DTW
                     currentBufferFrame.Text = _video.Count.ToString();
 
-                    // We need a sensible number of frames before we start attempting to match gestures against remembered sequences
+                    // If read is enabled
                     if (_video.Count > MinimumFrames && _capturing == true)
                     {
-                        ////Debug.WriteLine("Reading and video.Count=" + video.Count);
-                        //_dtw.Recognize(_video);
-
-                        _videom = new Matrix<float>(1, _dimension);
+                        sample = new Matrix<float>(1, _dimension);
                         string[] features = _dtw.RetrieveText1().Split(' ');
                         for (int i = 0; i < features.Length; i++)
                         {
                             int featureIndex;
-                            //Console.WriteLine(features[i]);
                             if(Int32.TryParse(features[i], out featureIndex))
-                                _videom[0, i] = (float) featureIndex;
+                                sample[0, i] = (float) featureIndex;
                         }
 
-                        Gestures recordedGesture = _knn.Predict(_videom);
+                        Gestures recordedGesture = EmguCVKNearestNeighbors.Predict(sample);
 
                         results.Text = "Recognised as: " + recordedGesture.ToString();
 
@@ -243,9 +234,6 @@ namespace GestureControlledRemote
                             }
                         }
                     }
-
-                    // Update the debug window with Sequences information
-                    //dtwTextOutput.Text = _dtw.RetrieveText();
 
                     // Write the pixel data into our bitmap
                     this.depthBitmap.WritePixels(
