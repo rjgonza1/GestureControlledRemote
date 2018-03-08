@@ -36,7 +36,6 @@ namespace GestureControlledRemote
         private bool ready = false;
 
         /// KNN
-        //private const string TDFile = @"C:\Users\joshu\Desktop\Training Data\traindata.txt";
         private const string TDFile = @"GestureData.txt";
         private Matrix<float> sample;
 
@@ -51,8 +50,6 @@ namespace GestureControlledRemote
         private const int _dimension = 12;
 
         /// Video
-        
-        /// _video -> double
         private ArrayList _video;
         private bool _capturing;
         private const int MinimumFrames = 6;
@@ -60,7 +57,6 @@ namespace GestureControlledRemote
 
         /// QoL counter for tracking how many gestures were saved for training
         private int gestureCount = 0;
-
 
         /// ArrayList of coordinates which are recorded in sequence to define one gesture
         private DateTime _captureCountdown = DateTime.Now;
@@ -70,15 +66,6 @@ namespace GestureControlledRemote
         
         /// The minumum number of frames in the _video buffer before we attempt to start matching gestures
         private const int CaptureCountdownSeconds = 3;
- 
-        /// Total number of framed that have occurred. Used for calculating frames per second
-        private int _totalFrames;
-
-        /// The 'last time' DateTime. Used for calculating frames per second
-        private DateTime _lastTime = DateTime.MaxValue;
-
-        /// How many frames occurred 'last time'. Used for calculating frames per second
-        private int _lastFrames;
 
         /// Where we will save our gestures to. The app will append a data/time and .txt to this string
         // private const string GestureSaveFileLocation = @"H:\My Dropbox\Dropbox\Microsoft Kinect SDK Beta\DTWGestureRecognition\DTWGestureRecognition\";
@@ -134,9 +121,9 @@ namespace GestureControlledRemote
         ////// Main Window Elements //////
         //////////////////////////////////
 
-        /// Taken from open source KinectDTW project
         /// Called when each depth frame is ready
-        /// Does necessary processing to get our finger points and passes it on to the DTW class
+        /// Does necessary processing to get our finger points and predicting gestures
+        /// Most of the interesting stuff happens in here
         private void GestureDepthFrameReady(object sender, DepthImageFrameReadyEventArgs e)
         {
             // Calculating and storing finger and palm positions
@@ -194,19 +181,19 @@ namespace GestureControlledRemote
                         ++colorPixelIndex;
                     }
 
-                    /// Pass off to DTW
-                    currentBufferFrame.Text = _video.Count.ToString();
+                    ///// Pass off to DTW
+                    //currentBufferFrame.Text = _video.Count.ToString();
 
                     // If read is enabled
                     if (_video.Count > MinimumFrames && _capturing == true)
                     {
                         sample = new Matrix<float>(1, _dimension);
-                        string[] features = _dtw.RetrieveText1().Split(' ');
+                        string[] features = _dtw.ExtractFeatures().Split(' ');
                         for (int i = 0; i < features.Length; i++)
                         {
                             int featureIndex;
-                            if(Int32.TryParse(features[i], out featureIndex))
-                                sample[0, i] = (float) featureIndex;
+                            if (Int32.TryParse(features[i], out featureIndex))
+                                sample[0, i] = (float)featureIndex;
                         }
 
                         Gestures recordedGesture = EmguCVKNearestNeighbors.Predict(sample);
@@ -232,6 +219,21 @@ namespace GestureControlledRemote
                         }
 
                         results.Text = "Recognised as: " + recordedGesture.ToString();
+
+                        if(SerialSender.GetSendState() && recordedGesture != Gestures.ReadySignal)
+                        {                    
+                            SerialSender.SendGesture(recordedGesture);
+                            SerialSender.SetSendState(false);
+                            recordedGesture = Gestures.None;
+                            imageBorder.BorderThickness = new Thickness(0);
+                        }
+
+                        if (recordedGesture == Gestures.ReadySignal)
+                        {
+                            imageBorder.BorderThickness = new Thickness(10);
+                            SerialSender.SetSendState(true);
+                        }
+
 
                         if (recordedGesture == Gestures.None)
                         {
@@ -264,17 +266,6 @@ namespace GestureControlledRemote
                         this.depthcolorPixels,
                         this.depthBitmap.PixelWidth * sizeof(int),
                         0);
-
-                    ++_totalFrames;
-
-                    DateTime cur = DateTime.Now;
-                    if (cur.Subtract(_lastTime) > TimeSpan.FromSeconds(1))
-                    {
-                        int frameDiff = _totalFrames - _lastFrames;
-                        _lastFrames = _totalFrames;
-                        _lastTime = cur;
-                        frameRate.Text = frameDiff + " fps";
-                    }
                 }
             }
         }
@@ -306,10 +297,12 @@ namespace GestureControlledRemote
         /// Cleanup 
         private void WindowClosed(object sender, EventArgs e)
         {
+            // Stop the sensor
             if (null != this.sensor)
                 this.sensor.Stop();
 
-            //SerialSender.SerialSenderShutdown();
+            // Close the SerialSender communication
+            SerialSender.SerialSenderShutdown();
 
             Environment.Exit(0);
         }
@@ -493,24 +486,38 @@ namespace GestureControlledRemote
         }
 
 
-        //////////////////////////////////
-        ////// DTW Window Elements ///////
-        //////////////////////////////////
+        /////////////////////////////////
+        //////// Window Elements ////////
+        /////////////////////////////////
 
         /// Read mode. Sets our control variables and button enabled states
         private void DtwReadClick(object sender, RoutedEventArgs e)
         {
             // Set the buttons enabled state
             dtwRead.IsEnabled = false;
-            dtwCapture.IsEnabled = true;
-            dtwStore.IsEnabled = false;
+            Stop.IsEnabled = true;
 
             // Set the capturing? flag
             _capturing = true;
 
             // Update the status display
             imageBorder.BorderThickness = new Thickness(0);
-            status.Text = "Done";
+            status.Text = "Reading";
+        }
+
+        /// Stops read mode
+        private void StopRead(object sender, RoutedEventArgs e)
+        {
+            // Set the buttons enabled state
+            dtwRead.IsEnabled = true;
+            Stop.IsEnabled = false;
+
+            // Set the capturing? flag
+            _capturing = false;
+
+            // Update the status display
+            imageBorder.BorderThickness = new Thickness(0);
+            status.Text = "Done Reading";
         }
 
         /// Starts a countdown timer to enable the player to get in position to record gestures
@@ -548,14 +555,9 @@ namespace GestureControlledRemote
             // Set the buttons enabled state
             dtwRead.IsEnabled = false;
             dtwCapture.IsEnabled = false;
-            dtwStore.IsEnabled = true;
 
             // Set the capturing? flag
             _capturing = true;
-
-            ////_captureCountdownTimer.Dispose();
-
-            //status.Text = "Recording gesture" + gestureList.Text;
 
             // Clear the _video buffer and start from the beginning
             _video = new ArrayList();
@@ -569,16 +571,12 @@ namespace GestureControlledRemote
             // Set the buttons enabled state
             dtwRead.IsEnabled = false;
             dtwCapture.IsEnabled = true;
-            dtwStore.IsEnabled = false;
 
             // Set the capturing? flag
             _capturing = false;
 
-            //status.Text = "Remembering " + gestureList.Text;
-
             // Add the current video buffer to the dtw sequences list
             _dtw.AddOrUpdate(_video, gestureList.Text);
-            //results.Text = "Gesture " + gestureList.Text + "added";
 
             // Scratch the _video buffer
             _video = new ArrayList();
@@ -592,93 +590,8 @@ namespace GestureControlledRemote
         {
             counter.Text = "Recorded Gestures: " + (++gestureCount).ToString();
 
-            string fileName = GestureSaveFileNamePrefix + DateTime.Now.ToString("yyyy-MM-dd_HH-mm") + ".txt";
-            System.IO.File.WriteAllText(GestureSaveFileLocation + fileName, _dtw.RetrieveText());
-            status.Text = "Saved to " + fileName;
-
             string fileName_modeling = ModelingSaveFileNamePrefix + ".txt";
-            //System.IO.File.WriteAllText(GestureSaveFileLocation + fileName_modeling, _dtw.RetrieveText1());
-            System.IO.File.AppendAllText(GestureSaveFileLocation + fileName_modeling, _dtw.RetrieveText1());
-        }
-
-        /// Loads the user's selected gesture file
-        //private void DtwLoadFile(object sender, RoutedEventArgs e)
-        //{
-        //    // Create OpenFileDialog
-        //    Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
-
-        //    // Set filter for file extension and default file extension
-        //    dlg.DefaultExt = ".txt";
-        //    dlg.Filter = "Text documents (.txt)|*.txt";
-
-        //    dlg.InitialDirectory = GestureSaveFileLocation;
-
-        //    // Display OpenFileDialog by calling ShowDialog method
-        //    Nullable<bool> result = dlg.ShowDialog();
-
-        //    // Get the selected file name and display in a TextBox
-        //    if (result == true)
-        //    {
-        //        // Open document
-        //        LoadGesturesFromFile(dlg.FileName);
-        //        dtwTextOutput.Text = _dtw.RetrieveText();
-        //        status.Text = "Gestures loaded!";
-        //    }
-        //}
-
-        /// Stores our gesture to the DTW sequences list
-        private void DtwShowGestureText(object sender, RoutedEventArgs e)
-        {
-            dtwTextOutput.Text = _dtw.RetrieveText();
-        }
-
-        /// Opens the sent text file and creates a _dtw recorded gesture sequence
-        /// Currently not very flexible and totally intolerant of errors.
-        public void LoadGesturesFromFile(string fileLocation)
-        {
-            int itemCount = 0;
-            string line;
-            string gestureName = String.Empty;
-
-            // TODO I'm defaulting this to 2 here for now as it meets my current need but I need to cater for variable lengths in the future
-            ArrayList frames = new ArrayList();
-            double[] items = new double[_dimension];
-
-            // Read the file and display it line by line.
-            System.IO.StreamReader file = new System.IO.StreamReader(fileLocation);
-            while ((line = file.ReadLine()) != null)
-            {
-                if (line.StartsWith("@"))
-                {
-                    gestureName = line;
-                    continue;
-                }
-
-                if (line.StartsWith("~"))
-                {
-                    frames.Add(items);
-                    itemCount = 0;
-                    items = new double[_dimension];
-                    continue;
-                }
-
-                if (!line.StartsWith("----"))
-                {
-                    items[itemCount] = Double.Parse(line);
-                }
-
-                itemCount++;
-
-                if (line.StartsWith("----"))
-                {
-                    _dtw.AddOrUpdate(frames, gestureName);
-                    frames = new ArrayList();
-                    gestureName = String.Empty;
-                    itemCount = 0;
-                }
-            }
-
-            file.Close();
+            System.IO.File.AppendAllText(GestureSaveFileLocation + fileName_modeling, _dtw.ExtractFeatures());
         }
 
         /// Reset gesture saved counter

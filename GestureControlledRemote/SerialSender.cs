@@ -7,73 +7,63 @@ namespace GestureControlledRemote
 {
     public static class SerialSender
     {
-        private static Gestures outgoingGesture;
         private static SerialPort serialPort;
-        private static bool open;
+        private static String portName;
+        private static Int32 baudRate;
+        private static bool sendState;
 
         /// Static Constructor
         static SerialSender()
         {
-            // Initialize Gestures enum to 0
-            outgoingGesture = Gestures.None;
-
-            // Create thread to execute Send function
-            //Thread sendThread = new Thread(SendGesture);
+            // Configure port name and baud rate
+            portName = "COM3";
+            baudRate = 9600;
 
             // Create a new SerialPort object with default settings
-            serialPort = new SerialPort("COM2", 9600);
+            serialPort = new SerialPort(portName, baudRate, Parity.None, 8, StopBits.One);
 
             // Set the read/write timeouts
-            //serialPort.ReadTimeout = 500;
+            serialPort.ReadTimeout = 500;
             serialPort.WriteTimeout = 500;
+
+            // Needs to be enabled if Handshake is None
+            serialPort.DtrEnable = true;
+            serialPort.RtsEnable = true;
 
             // Open comms and start thread
             serialPort.Open();
-            open = true;
-            //sendThread.Start();
+        }
 
-            // MainWindow close will send a shutdown signal and exit the loop
-            while(open)
+        public static void SendGesture(Gestures gesture)
+        {
+            if (sendState)
             {
-                if(outgoingGesture == Gestures.ReadySignal)
+                try
                 {
-                    ReadyState();
-                    outgoingGesture = Gestures.None;
+                    serialPort.WriteLine(((int)gesture).ToString());
+                }
+                catch (TimeoutException)
+                {
                 }
             }
+        }
 
-            // Join thread and close port
-            //sendThread.Join();
+        /// Get shtudown signal from MainWindow class
+        public static void SerialSenderShutdown()
+        {
             serialPort.Close();
         }
 
-        private static void ReadyState()
+        /// Set state for sending gesture
+        public static void SetSendState(bool state)
         {
-            while(outgoingGesture == Gestures.ReadySignal)
-            {
-                if (outgoingGesture != Gestures.ReadySignal || outgoingGesture != Gestures.None)
-                {
-                    SendGesture();
-                }
-            }
+            sendState = state;
         }
 
-        private static void SendGesture()
+        /// Get state for sending gesture
+        public static bool GetSendState()
         {
-            try
-            {
-                serialPort.Write(outgoingGesture.ToString());
-            }
-            catch (TimeoutException) { }
+            return sendState;
         }
-
-        /// Receive the prediction from the learner
-        public static void RecievePrediciton(Gestures prediction) { outgoingGesture = prediction; }
-
-        /// Get shtudown signal from MainWindow class
-        public static void SerialSenderShutdown() { open = false;  }
-
-        /// Return outgoingGesture
-        public static String GetOutgoingGesture() { return outgoingGesture.ToString(); }
     }
 }
