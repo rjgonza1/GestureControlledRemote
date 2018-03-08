@@ -32,6 +32,9 @@ namespace GestureControlledRemote
     {
         KinectSensor sensor;
 
+        /// FSM
+        private bool ready = false;
+
         /// KNN
         //private const string TDFile = @"C:\Users\joshu\Desktop\Training Data\traindata.txt";
         private const string TDFile = @"GestureData.txt";
@@ -79,7 +82,7 @@ namespace GestureControlledRemote
 
         /// Where we will save our gestures to. The app will append a data/time and .txt to this string
         // private const string GestureSaveFileLocation = @"H:\My Dropbox\Dropbox\Microsoft Kinect SDK Beta\DTWGestureRecognition\DTWGestureRecognition\";
-        private const string GestureSaveFileLocation = @"C:\Users\rjgon_000\Desktop\Recorded Gestures\";
+        private const string GestureSaveFileLocation = @"C:\Users\joshu\Desktop\Recorded Gestures\";
         private const string GestureSaveFileNamePrefix = @"RecordedGestures";
         private const string ModelingSaveFileNamePrefix = @"Modeling";
 
@@ -207,6 +210,26 @@ namespace GestureControlledRemote
                         }
 
                         Gestures recordedGesture = EmguCVKNearestNeighbors.Predict(sample);
+                        if (ready == false)
+                        {
+                            if (recordedGesture == Gestures.ReadySignal)
+                            {
+                                ready = true;
+                                _video = new ArrayList();
+                            }
+                        }
+                        else if (_video.Count == BufferSize && ready == true)
+                        {
+                            if (recordedGesture == Gestures.ReadySignal)
+                            {
+                                _video = new ArrayList();
+                            }
+                            else
+                            {
+                                string s = (recordedGesture.ToString());
+                                ready = false;
+                            }
+                        }
 
                         results.Text = "Recognised as: " + recordedGesture.ToString();
 

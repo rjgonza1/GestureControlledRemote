@@ -52,7 +52,9 @@ namespace GestureControlledRemote
             while(outgoingGesture == Gestures.ReadySignal)
             {
                 if (outgoingGesture != Gestures.ReadySignal || outgoingGesture != Gestures.None)
+                {
                     SendGesture();
+                }
             }
         }
 
