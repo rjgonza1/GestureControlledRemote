@@ -19,12 +19,10 @@
         <TextBox FontSize="10" Name="Pinky" Focusable="False"   BorderThickness="0" Text="Pinky"    TextAlignment="Right" HorizontalAlignment="Right" VerticalAlignment="Top" Width="400" Height="20" Margin="0,105,-0.4,0" />
         <TextBox FontSize="10" Name="Palm" Focusable="False"   BorderThickness="0" Text="Palm"    TextAlignment="Right" HorizontalAlignment="Right" VerticalAlignment="Top" Width="400" Height="20" Margin="0,120,-0.4,0" />-->
         <StackPanel Grid.Column="0" Grid.Row="1">
-            <Button Name="dtwCapture" Content="Capture" Click="DtwCaptureClick" Width="200" Margin="0,100,0,0" HorizontalAlignment="Left"/>
-            <Button Name="dtwStore" Content="Store" IsEnabled="False" Click="DtwStoreClick" Width="200" Margin="0,0,0,0" HorizontalAlignment="Left" />
-            <!--<Button Name="dtwLoadFile" Content="Load gesture file" IsEnabled="True" Click="DtwLoadFile" Width="200" Margin="0,0,0,0" HorizontalAlignment="Left" />-->
+            <Button x:Name="dtwRead" Content="Start" Click="DtwReadClick" Width="200" IsEnabled="True"  Margin="0,100,0,0" HorizontalAlignment="Left" />
+            <Button x:Name="Stop" Content="Stop" Click="StopRead" Width="200" IsEnabled="False"  Margin="0,0,0,0" HorizontalAlignment="Left" />
+            <Button Name="dtwCapture" Content="Capture" Click="DtwCaptureClick" Width="200" Margin="0,0,0,0" HorizontalAlignment="Left"/>
             <Button Name="dtwSaveToFile" Content="Save to file" IsEnabled="True" Click="DtwSaveToFile" Width="200" Margin="0,0,0,0" HorizontalAlignment="Left" />
-            <Button x:Name="dtwRead" Content="Read" Click="DtwReadClick" Width="200" IsEnabled="True"  Margin="0,0,0,0" HorizontalAlignment="Left" />
-            <Button x:Name="dtwShowGestureTest" Content="Show Gesture Text" IsEnabled="True" Click="DtwShowGestureText" Margin="0,0,0,0" HorizontalAlignment="Left" Width="200" />
             <Button x:Name="resetCounter" Content="Reset Counter" IsEnabled="True" Click="ResetCounter" Margin="0,0,0,0" HorizontalAlignment="Left" Width="200" />
 
         </StackPanel>
@@ -32,16 +30,9 @@
         <StackPanel HorizontalAlignment="Left" Margin="0,10,0,415">
             <ComboBox Name="gestureList" Width="400">
                 <ComboBoxItem IsSelected="True">@Ready Signal</ComboBoxItem>
-                <ComboBoxItem>@Channel Up</ComboBoxItem>
-                <ComboBoxItem>@Channel Down</ComboBoxItem>
-                <ComboBoxItem>@Volume Up</ComboBoxItem>
-                <ComboBoxItem>@Volume Down</ComboBoxItem>
             </ComboBox>
-            <TextBox FontSize="14" Name="results" Margin="0,0,0,0" Focusable="False" BorderThickness="0" Text="" TextAlignment="Left" HorizontalAlignment="Left" VerticalAlignment="Top" Width="400" Height="20" />
-            <TextBox FontSize="14" Name="currentBufferFrame" Margin="0,0,0,0" Focusable="False" BorderThickness="0" Text="" TextAlignment="Left" HorizontalAlignment="Left" VerticalAlignment="Top" Width="400" Height="20" />
-            <TextBox FontSize="14" Name="frameRate" Margin="0,0,0,0" Focusable="False" BorderThickness="0" Text="fps:" TextAlignment="Left" HorizontalAlignment="Left" VerticalAlignment="Top" Width="400" Height="20" />
+            <TextBox FontSize="20" Name="results" Margin="0,0,0,0" Focusable="False" BorderThickness="0" Text="" TextAlignment="Left" HorizontalAlignment="Left" VerticalAlignment="Top" Width="400" Height="45" />
         </StackPanel>
-        <TextBox Grid.Column="0" FontSize="11" Name="dtwTextOutput" Margin="0,423,873,40" Focusable="True" BorderThickness="0" Text="" TextAlignment="Left" HorizontalAlignment="Right" VerticalAlignment="Center" Width="200" Height="50" VerticalScrollBarVisibility="Auto" IsReadOnly="True" RenderTransformOrigin="-0.105,0.553" />
         <TextBox FontSize="30" Name="status" Margin="0,244,0,0" Focusable="False" BorderThickness="0" Text="" TextAlignment="Center" HorizontalAlignment="Left" VerticalAlignment="Top" Width="400" Height="87" />
         <TextBox FontSize="15" Name="counter" Margin="0,336,0,0" Focusable="False" BorderThickness="0" Text="Recorded Gestures: " TextAlignment="Left" HorizontalAlignment="Left" VerticalAlignment="Top" Width="400" Height="87" />
     </Grid>
