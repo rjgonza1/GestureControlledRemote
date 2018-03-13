@@ -223,6 +223,9 @@ namespace GestureControlledRemote
                         if(SerialSender.GetSendState() && recordedGesture != Gestures.ReadySignal)
                         {                    
                             SerialSender.SendGesture(recordedGesture);
+                            // Volume Commands require double pulse.
+                            if (recordedGesture == Gestures.VolumeUp || recordedGesture == Gestures.VolumeDown)
+                                SerialSender.SendGesture(recordedGesture);
                             SerialSender.SetSendState(false);
                             recordedGesture = Gestures.None;
                             imageBorder.BorderThickness = new Thickness(0);
@@ -576,7 +579,7 @@ namespace GestureControlledRemote
             _capturing = false;
 
             // Add the current video buffer to the dtw sequences list
-            _dtw.AddOrUpdate(_video, gestureList.Text);
+            _dtw.AddOrUpdate(_video);
 
             // Scratch the _video buffer
             _video = new ArrayList();

@@ -65,11 +65,6 @@ namespace GestureControlledRemote
         private readonly double _globalThreshold;
 
         /// <summary>
-        /// The gesture names. Index matches that of the sequences array in _sequences
-        /// </summary>
-        private readonly ArrayList _labels;
-
-        /// <summary>
         /// Maximum vertical or horizontal steps in a row.
         /// </summary>
         private readonly int _maxSlope;
@@ -90,7 +85,6 @@ namespace GestureControlledRemote
         {
             _dimension = dim;
             _sequences = new ArrayList();
-            _labels = new ArrayList();
             _globalThreshold = threshold;
             _firstThreshold = firstThreshold;
             _maxSlope = int.MaxValue;
@@ -109,7 +103,6 @@ namespace GestureControlledRemote
         {
             _dimension = dim;
             _sequences = new ArrayList();
-            _labels = new ArrayList();
             _globalThreshold = threshold;
             _firstThreshold = firstThreshold;
             _maxSlope = ms;
@@ -117,35 +110,14 @@ namespace GestureControlledRemote
         }
 
         /// <summary>
-        /// Add a seqence with a label to the known sequences library.
+        /// Add a seqence to the known sequences library.
         /// The gesture MUST start on the first observation of the sequence and end on the last one.
         /// Sequences may have different lengths.
         /// </summary>
         /// <param name="seq">The sequence</param>
-        /// <param name="lab">Sequence name</param>
-        public void AddOrUpdate(ArrayList seq, string lab)
+        public void AddOrUpdate(ArrayList seq)
         {
-            // First we check whether there is already a recording for this label. If so overwrite it, otherwise add a new entry
-            int existingIndex = -1;
-
-            for (int i = 0; i < _labels.Count; i++)
-            {
-                if ((string)_labels[i] == lab)
-                {
-                    existingIndex = i;
-                }
-            }
-
-            // If we have a match then remove the entries at the existing index to avoid duplicates. We will add the new entries later anyway
-            if (existingIndex >= 0)
-            {
-                _sequences.RemoveAt(existingIndex);
-                _labels.RemoveAt(existingIndex);
-            }
-
-            // Add the new entries
             _sequences.Add(seq);
-            _labels.Add(lab);
         }
 
         /// Calculate difference between beginning and end of sequence for all 12 features
