@@ -41,6 +41,18 @@ namespace GestureControlledRemote
                 try
                 {
                     serialPort.WriteLine(((int)gesture).ToString());
+
+                    if(gesture == Gestures.VolumeUp || gesture == Gestures.VolumeDown)
+                    {
+                        int pulse = 0;
+                        while (pulse < 5)
+                        {
+                            serialPort.WriteLine(((int)gesture).ToString());
+                            Thread.Sleep(200);
+                            ++pulse;
+                        }
+                    }
+                    
                 }
                 catch (TimeoutException)
                 {

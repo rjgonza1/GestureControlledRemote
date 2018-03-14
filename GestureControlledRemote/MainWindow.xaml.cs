@@ -197,35 +197,12 @@ namespace GestureControlledRemote
                         }
 
                         Gestures recordedGesture = EmguCVKNearestNeighbors.Predict(sample);
-                        if (ready == false)
-                        {
-                            if (recordedGesture == Gestures.ReadySignal)
-                            {
-                                ready = true;
-                                _video = new ArrayList();
-                            }
-                        }
-                        else if (_video.Count == BufferSize && ready == true)
-                        {
-                            if (recordedGesture == Gestures.ReadySignal)
-                            {
-                                _video = new ArrayList();
-                            }
-                            else
-                            {
-                                string s = (recordedGesture.ToString());
-                                ready = false;
-                            }
-                        }
 
                         results.Text = "Recognised as: " + recordedGesture.ToString();
 
                         if(SerialSender.GetSendState() && recordedGesture != Gestures.ReadySignal)
                         {                    
                             SerialSender.SendGesture(recordedGesture);
-                            // Volume Commands require double pulse.
-                            if (recordedGesture == Gestures.VolumeUp || recordedGesture == Gestures.VolumeDown)
-                                SerialSender.SendGesture(recordedGesture);
                             SerialSender.SetSendState(false);
                             recordedGesture = Gestures.None;
                             imageBorder.BorderThickness = new Thickness(0);
@@ -579,7 +556,7 @@ namespace GestureControlledRemote
             _capturing = false;
 
             // Add the current video buffer to the dtw sequences list
-            _dtw.AddOrUpdate(_video);
+            _dtw.AddSequence(_video);
 
             // Scratch the _video buffer
             _video = new ArrayList();

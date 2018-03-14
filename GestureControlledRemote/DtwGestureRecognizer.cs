@@ -109,14 +109,12 @@ namespace GestureControlledRemote
             _minimumLength = minLen;
         }
 
-        /// <summary>
-        /// Add a seqence to the known sequences library.
-        /// The gesture MUST start on the first observation of the sequence and end on the last one.
-        /// Sequences may have different lengths.
-        /// </summary>
-        /// <param name="seq">The sequence</param>
-        public void AddOrUpdate(ArrayList seq)
+
+        /// Remove and add new sequence
+        public void AddSequence(ArrayList seq)
         {
+            if (_sequences.Count > 0)
+                _sequences.RemoveAt(0);
             _sequences.Add(seq);
         }
 
