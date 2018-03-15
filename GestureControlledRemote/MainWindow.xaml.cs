@@ -67,6 +67,9 @@ namespace GestureControlledRemote
         /// The minumum number of frames in the _video buffer before we attempt to start matching gestures
         private const int CaptureCountdownSeconds = 3;
 
+        /// The amount to pulse volume commands, based on how much the user wants to increase/decrease volume (default 5)
+        private int pulse = 5;
+
         /// Where we will save our gestures to. The app will append a data/time and .txt to this string
         // private const string GestureSaveFileLocation = @"H:\My Dropbox\Dropbox\Microsoft Kinect SDK Beta\DTWGestureRecognition\DTWGestureRecognition\";
         private const string GestureSaveFileLocation = @"C:\Users\joshu\Desktop\Recorded Gestures\";
@@ -202,7 +205,7 @@ namespace GestureControlledRemote
 
                         if(SerialSender.GetSendState() && recordedGesture != Gestures.ReadySignal)
                         {                    
-                            SerialSender.SendGesture(recordedGesture);
+                            SerialSender.SendGesture(recordedGesture, pulse);
                             SerialSender.SetSendState(false);
                             recordedGesture = Gestures.None;
                             imageBorder.BorderThickness = new Thickness(0);
@@ -572,6 +575,15 @@ namespace GestureControlledRemote
 
             string fileName_modeling = ModelingSaveFileNamePrefix + ".txt";
             System.IO.File.AppendAllText(GestureSaveFileLocation + fileName_modeling, _dtw.ExtractFeatures());
+        }
+
+        /// When User gives input Volume Change Amount
+        private void Volume_Click(object sender, RoutedEventArgs e)
+        {
+            int p;
+            if (int.TryParse(PulseText.Text, out p))
+                pulse = p;
+            PulseText.Clear();
         }
 
         /// Reset gesture saved counter

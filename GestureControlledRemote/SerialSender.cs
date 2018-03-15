@@ -34,7 +34,7 @@ namespace GestureControlledRemote
             serialPort.Open();
         }
 
-        public static void SendGesture(Gestures gesture)
+        public static void SendGesture(Gestures gesture, int pulse)
         {
             if (sendState)
             {
@@ -44,12 +44,12 @@ namespace GestureControlledRemote
 
                     if(gesture == Gestures.VolumeUp || gesture == Gestures.VolumeDown)
                     {
-                        int pulse = 0;
-                        while (pulse < 5)
+                        int p = 0;
+                        while (p < pulse)
                         {
                             serialPort.WriteLine(((int)gesture).ToString());
                             Thread.Sleep(200);
-                            ++pulse;
+                            ++p;
                         }
                     }
                     
@@ -59,6 +59,7 @@ namespace GestureControlledRemote
                 }
             }
         }
+
 
         /// Get shtudown signal from MainWindow class
         public static void SerialSenderShutdown()
