@@ -84,6 +84,7 @@ namespace GestureControlledRemote
         public MainWindow()
         {
             InitializeComponent();
+            PulseDisplay.Text = pulse.ToString();
         }
 
         private void InitKinect()
@@ -582,7 +583,10 @@ namespace GestureControlledRemote
         {
             int p;
             if (int.TryParse(PulseText.Text, out p))
+            {
                 pulse = p;
+                PulseDisplay.Text = p.ToString();
+            }
             PulseText.Clear();
         }
 

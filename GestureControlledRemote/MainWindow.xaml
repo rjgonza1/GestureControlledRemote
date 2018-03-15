@@ -34,6 +34,8 @@
         <TextBox FontSize="15" Name="counter" Margin="0,272,0,0" Focusable="False" BorderThickness="0" Text="Recorded Gestures: " TextAlignment="Left" HorizontalAlignment="Left" VerticalAlignment="Top" Width="400" Height="87" />
         <StackPanel Margin="0,364,0,0" Width="400" HorizontalAlignment="Left" VerticalAlignment="Top">
             <Label FontSize="15" Content="Enter Desired Change in Volume:" Margin="0,0,0,0" BorderThickness="0" Width="400" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+            <Label FontSize="15" Content="Current:" Margin="0,0,0,0" BorderThickness="0" Width="65" HorizontalAlignment="Left"/>
+            <TextBox FontSize="15" Name="PulseDisplay" Margin="0,0,0,0" BorderThickness="0" Width="65" HorizontalAlignment="Left"/>
             <TextBox FontSize="15" Name="PulseText" Margin="0,0,0,0" Background="AliceBlue" BorderThickness="0" Width="100" HorizontalAlignment="Left" />
             <Button Margin="0,0,0,0" Content="OK" Width="100" HorizontalAlignment="Left" Click="Volume_Click"/>
             <Label Margin="0,0,0,0" Name="VolumeLabel" Width="400" HorizontalAlignment="Left"/>

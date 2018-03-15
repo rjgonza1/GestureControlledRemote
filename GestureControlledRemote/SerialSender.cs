@@ -16,7 +16,7 @@ namespace GestureControlledRemote
         static SerialSender()
         {
             // Configure port name and baud rate
-            portName = "COM3";
+            portName = "COM4";
             baudRate = 9600;
 
             // Create a new SerialPort object with default settings
