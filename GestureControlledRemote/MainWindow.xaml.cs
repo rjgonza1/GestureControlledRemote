@@ -53,7 +53,7 @@ namespace GestureControlledRemote
         private ArrayList _video;
         private bool _capturing;
         private const int MinimumFrames = 6;
-        private const int BufferSize = 60;
+        private const int BufferSize = 45;
 
         /// QoL counter for tracking how many gestures were saved for training
         private int gestureCount = 0;
@@ -185,9 +185,6 @@ namespace GestureControlledRemote
                         ++colorPixelIndex;
                     }
 
-                    ///// Pass off to DTW
-                    //currentBufferFrame.Text = _video.Count.ToString();
-
                     // If read is enabled
                     if (_video.Count > MinimumFrames && _capturing == true)
                     {
@@ -314,7 +311,7 @@ namespace GestureControlledRemote
                 /// Calculate convexity defects
                 Matrix<int> defects = CalculateConvexityDefects(img, biggestContour, contours);
 
-                if(defects != null)
+                if (defects != null)
                     /// Extract finger points from defects and send to DTW
                     StorePoints(biggestContour, defects, midPoint);
             }

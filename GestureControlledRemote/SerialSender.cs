@@ -60,7 +60,6 @@ namespace GestureControlledRemote
             }
         }
 
-
         /// Get shtudown signal from MainWindow class
         public static void SerialSenderShutdown()
         {
